@@ -29,6 +29,48 @@
       "when": 1732268075991,
       "tag": "0003_smiling_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1732307944930,
+      "tag": "0004_colorful_vengeance",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1732309821578,
+      "tag": "0005_thankful_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1732314097162,
+      "tag": "0006_panoramic_anthem",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1732314319733,
+      "tag": "0007_fast_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1732314373575,
+      "tag": "0008_magical_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1732314547800,
+      "tag": "0009_elite_the_captain",
+      "breakpoints": true
     }
   ]
 }

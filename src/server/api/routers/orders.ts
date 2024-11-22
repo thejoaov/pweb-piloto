@@ -45,6 +45,7 @@ export const ordersRouter = createTRPCRouter({
         limit: perPage,
         orderBy: order === 'asc' ? asc(orders[orderBy]) : desc(orders[orderBy]),
         with: {
+          modifiedBy: true,
           user: true,
           items: {
             with: {
@@ -63,6 +64,7 @@ export const ordersRouter = createTRPCRouter({
       const order = await ctx.db.query.orders.findFirst({
         where: eq(orders.id, input.id),
         with: {
+          modifiedBy: true,
           items: {
             with: {
               product: true,
@@ -85,7 +87,7 @@ export const ordersRouter = createTRPCRouter({
 
       const [createdOrder] = await ctx.db
         .insert(orders)
-        .values(orderData)
+        .values({ ...orderData, userId: ctx.user?.id })
         .returning()
 
       await ctx.db.insert(orderItems).values(
@@ -104,7 +106,10 @@ export const ordersRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { id, items, ...orderData } = input
 
-      await ctx.db.update(orders).set(orderData).where(eq(orders.id, id))
+      await ctx.db
+        .update(orders)
+        .set({ ...orderData, modifiedById: ctx.user?.id })
+        .where(eq(orders.id, id))
 
       // Insert new order items
       if (items?.length) {

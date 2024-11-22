@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import { cn } from '~/lib/utils'
+import { cn, formatCurrency } from '~/lib/utils'
 import { api } from '~/trpc/react'
 import type { Order } from './columns'
 
@@ -96,7 +96,7 @@ export function OrderModal({
     setIsSubmitting(true)
     await onSubmit({
       id: order?.id,
-      total: calculateTotal,
+      total: Number(calculateTotal.toFixed(2)),
       status,
       userId,
       items,
@@ -133,11 +133,18 @@ export function OrderModal({
     setItems(newItems)
   }
 
+  const handleClose = () => {
+    setItems([])
+    onClose()
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>{order ? 'Edit Order' : 'Create New Order'}</DialogTitle>
+          <DialogTitle>
+            {order ? 'Editar Order' : 'Criar Nova Ordem'}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -155,16 +162,16 @@ export function OrderModal({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="processing">Processando</SelectItem>
+                    <SelectItem value="completed">Completada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="grid gap-4">
-              <Label>Order Items</Label>
+              <Label>Produtos</Label>
               {items.map((item, index) => (
                 <div key={item.productId} className="flex items-center gap-2">
                   <Popover
@@ -186,7 +193,7 @@ export function OrderModal({
                           ? products.find(
                               (product) => product.id === item.productId,
                             )?.name
-                          : 'Select product...'}
+                          : 'Selecione um produto...'}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -194,10 +201,12 @@ export function OrderModal({
                       <Command>
                         <CommandInput
                           disabled={!isEditable}
-                          placeholder="Search product..."
+                          placeholder="Pesquise um produto..."
                         />
                         <CommandList>
-                          <CommandEmpty>No product found.</CommandEmpty>
+                          <CommandEmpty>
+                            Nenhum produto encontrado.
+                          </CommandEmpty>
                           <CommandGroup>
                             {products.map((product, index) => (
                               <CommandItem
@@ -262,16 +271,16 @@ export function OrderModal({
                 onClick={addItem}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Item
+                Adicionar Produto
               </Button>
             </div>
             <div className="text-right">
-              <strong>Total: ${calculateTotal.toFixed(2)}</strong>
+              <strong>Total: ${formatCurrency(calculateTotal)}</strong>
             </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {order ? 'Update' : 'Create'} Order
+              {order ? 'Atualizar' : 'Criar'} Ordem
               {isSubmitting && (
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
               )}

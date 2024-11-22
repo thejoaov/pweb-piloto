@@ -8,10 +8,8 @@ import {
   ShoppingCart,
   Users,
 } from 'lucide-react'
-import { revalidatePath } from 'next/cache'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import router from 'next/navigation'
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,7 +28,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
 } from '~/components/ui/sidebar'
 import { DEFAULT_AUTH_ROUTE } from '~/config/routes'
 import { createClient } from '~/utils/supabase/client'
@@ -55,13 +52,13 @@ export function DashboardSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarHeader>
-                <h2 className="text-lg font-semibold">Dashboard</h2>
+                <h2 className="text-lg font-semibold">Tela inicial</h2>
               </SidebarHeader>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
                   <Link href="/dashboard">
                     <Home className="mr-2 h-4 w-4" />
-                    <span>Home</span>
+                    <span>Tela inicial</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -72,7 +69,7 @@ export function DashboardSidebar() {
                 >
                   <Link href="/dashboard/users">
                     <Users className="mr-2 h-4 w-4" />
-                    <span>Users</span>
+                    <span>Usuários</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -80,7 +77,7 @@ export function DashboardSidebar() {
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton>
                     <Package className="mr-2 h-4 w-4" />
-                    <span>Products</span>
+                    <span>Produtos</span>
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -88,12 +85,14 @@ export function DashboardSidebar() {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/dashboard/products">List</Link>
+                        <Link href="/dashboard/products">Lista</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/dashboard/products?new=true">New</Link>
+                        <Link href="/dashboard/products?new=true">
+                          Novo produto
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -103,7 +102,7 @@ export function DashboardSidebar() {
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    <span>Orders</span>
+                    <span>Ordens</span>
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -111,12 +110,14 @@ export function DashboardSidebar() {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/dashboard/orders">List</Link>
+                        <Link href="/dashboard/orders">Lista</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/dashboard/orders?new=true">New</Link>
+                        <Link href="/dashboard/orders?new=true">
+                          Nova ordem
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -130,7 +131,7 @@ export function DashboardSidebar() {
       <SidebarFooter>
         <Button variant="destructive" onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          Deslogar
         </Button>
       </SidebarFooter>
     </Sidebar>

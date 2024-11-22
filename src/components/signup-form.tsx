@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -20,17 +21,16 @@ import {
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { signUp } from '~/lib/actions'
-import { api } from '~/trpc/react'
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: 'Name must be at least 2 characters.',
+    message: 'Nome deve ter no mínimo 2 caracteres.',
   }),
   email: z.string().email({
-    message: 'Please enter a valid email address.',
+    message: 'Por favor, insira um endereço de email válido.',
   }),
   password: z.string().min(8, {
-    message: 'Password must be at least 8 characters.',
+    message: 'Senha deve ter no mínimo 8 caracteres.',
   }),
 })
 
@@ -55,13 +55,13 @@ export function SignupForm() {
       execute(values)
 
       if (!result || status === 'hasErrored') {
-        toast('Something went wrong. Please try again.')
+        toast('Algo deu errado. Por favor, tente novamente.')
       } else {
         toast('Your account has been created.')
         router.push('/dashboard')
       }
     } catch (error) {
-      toast('Something went wrong. Please try again.')
+      toast('Algo deu errado. Por favor, tente novamente.')
     } finally {
       setIsLoading(false)
     }
@@ -75,12 +75,12 @@ export function SignupForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Seu nome</FormLabel>
               <FormControl>
                 <Input placeholder="John Doe" {...field} />
               </FormControl>
               <FormDescription>
-                This is your public display name.
+                Seu nome será visto por outros usuários.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -96,7 +96,7 @@ export function SignupForm() {
                 <Input placeholder="john@example.com" {...field} />
               </FormControl>
               <FormDescription>
-                We'll never share your email with anyone else.
+                Nunca compartilharemos seu email com ninguém.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -107,19 +107,20 @@ export function SignupForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" autoComplete="new-password" {...field} />
               </FormControl>
               <FormDescription>
-                Your password must be at least 8 characters long.
+                Sua senha deve ter no mínimo 8 caracteres.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? 'Signing up...' : 'Sign up'}
+          {isLoading && <Loader className="mr-2 animate-spin" />}
+          {isLoading ? 'Cadastrando...' : 'Cadastrar'}
         </Button>
       </form>
     </Form>

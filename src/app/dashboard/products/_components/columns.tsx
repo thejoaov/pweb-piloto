@@ -1,12 +1,15 @@
 'use client'
 
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, Circle, DollarSign } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { formatCurrency } from '~/lib/utils'
 import type { RouterOutputs } from '~/trpc/react'
 
-export type Product = Exclude<RouterOutputs['products']['getById'], undefined>
+export type Product = Exclude<
+  RouterOutputs['products']['getList'][number],
+  undefined
+>
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -17,7 +20,8 @@ export const columns: ColumnDef<Product>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Name
+          <Circle className="h-4 w-4" />
+          Nome
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
@@ -32,37 +36,54 @@ export const columns: ColumnDef<Product>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Price
+          <DollarSign className="h-4 w-4" />
+          Valor
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
   },
   {
-    accessorKey: 'createdAt',
-    accessorFn: (product) => new Date(product.createdAt).toLocaleDateString(),
+    accessorKey: 'createdBy',
+    cell: ({ row }) => {
+      const product = row.original
+      return (
+        <div className="flex items-center">
+          <span className="mr-2">{product.createdBy.name ?? 'N/A'}</span>
+          <span> {new Date(product.updatedAt).toLocaleDateString()}</span>
+        </div>
+      )
+    },
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Created At
+          Criado por
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
   },
   {
-    accessorKey: 'updatedAt',
-    accessorFn: (product) => new Date(product.updatedAt).toLocaleDateString(),
+    accessorKey: 'lastUpdatedBy.name',
+    cell: ({ row }) => {
+      const product = row.original
+      return (
+        <div className="flex items-center">
+          <span className="mr-2">{product.modifiedBy?.name ?? 'N/A'}</span>
+          <span> {new Date(product.updatedAt).toLocaleDateString()}</span>
+        </div>
+      )
+    },
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Updated At
+          Modificado por
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )

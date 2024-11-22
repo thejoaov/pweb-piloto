@@ -26,7 +26,7 @@ export const signUp = action(
     })
 
     if (data.user?.identities && data.user.identities.length === 0) {
-      throw new Error('An error occurred. Please try again.')
+      throw new Error('Ocorreu um erro. Por favor, tente novamente.')
     }
 
     if (error) {

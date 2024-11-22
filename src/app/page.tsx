@@ -11,17 +11,9 @@ export default function LandingPage() {
       <header className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">
-            YourLogo
+            <img src="/logo-ifpi.png" alt="Logo" />
           </Link>
           <MainNav />
-          <div className="flex gap-4">
-            <Button variant="outline" asChild>
-              <Link href="/signin">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">Sign Up</Link>
-            </Button>
-          </div>
         </div>
       </header>
 

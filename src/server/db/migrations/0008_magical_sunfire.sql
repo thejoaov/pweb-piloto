@@ -1,0 +1,1 @@
+ALTER TABLE "piloto_order" RENAME COLUMN "price" TO "total";

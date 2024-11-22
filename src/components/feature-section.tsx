@@ -10,20 +10,21 @@ import {
 const features = [
   {
     icon: <CheckCircle className="h-8 w-8 text-primary" />,
-    title: 'Easy Task Management',
+    title: 'Gerenciamento de produtos',
     description:
-      'Organize and prioritize your tasks with our intuitive interface.',
+      'Crud completo, com listagem, criação, edição, ordenamento e remoção, de produtos e ordens. Avançe ou cancele as ordens, e veja os detalhes de cada.',
   },
   {
     icon: <Users className="h-8 w-8 text-primary" />,
-    title: 'Team Collaboration',
-    description: 'Work seamlessly with your team members in real-time.',
+    title: 'Listagem de usuários',
+    description:
+      'Login, cadastro e listagem de usuários com autenticação e confirmação via email.',
   },
   {
     icon: <Zap className="h-8 w-8 text-primary" />,
-    title: 'Boost Productivity',
+    title: 'Tecnologia em seu estado da arte',
     description:
-      'Increase your efficiency with our powerful productivity tools.',
+      'Next.JS 15, tRPC, Drizzle ORM, Supabase, TailwindCSS e Biome. Tudo para garantir a melhor experiência de desenvolvimento e performance.',
   },
 ]
 
@@ -33,8 +34,7 @@ export function FeatureSection() {
       <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {features.map((feature, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-          <Card key={index}>
+          <Card key={feature.title}>
             <CardHeader>
               <div className="mb-4">{feature.icon}</div>
               <CardTitle>{feature.title}</CardTitle>

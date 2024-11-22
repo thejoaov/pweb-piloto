@@ -1,5 +1,6 @@
 'use client'
 
+import type { ColumnDef } from '@tanstack/react-table'
 import { Copy, Edit, MoreHorizontal, Plus, Trash } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -94,53 +95,56 @@ export default function ProductsPage() {
   const handleCloseProductModal = () => {
     setIsProductModalOpen(false)
     setProductToEdit(undefined)
+    // This is a hack to remove the `new` query param from the URL
+    router.push('/dashboard/products')
   }
 
-  const extendedColumns = [
+  const extendedColumns: ColumnDef<Product>[] = [
     ...columns,
     {
       id: 'actions',
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      cell: ({ row, onDelete }: any) => {
-        const user = row.original
+      header: 'Ações',
+      cell: ({ row }) => {
+        const product = row.original
 
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>Ações</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
-                  navigator.clipboard.writeText(user.id)
+                  navigator.clipboard.writeText(product.id)
                   toast('User ID copied to clipboard')
                 }}
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copy user ID
+                Copiar ID do Produto
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
+
               <DropdownMenuItem
                 onClick={() => {
-                  handleEditProduct(row.original)
+                  handleEditProduct(product)
                 }}
               >
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                Editar
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onDelete(user.id)}
+                onClick={() => handleDeleteProduct(product.id)}
                 className="text-red-500"
               >
                 <Trash className="mr-2 h-4 w-4 text-red" />
-                Delete
+                Excluir
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -152,17 +156,13 @@ export default function ProductsPage() {
   return (
     <div className="container mx-auto p-10">
       <div className="flex justify-between mb-8">
-        <h1 className="text-3xl font-bold mb-8 flex-1">Products</h1>
+        <h1 className="text-3xl font-bold mb-8 flex-1">Produtos</h1>
         <Button className="ml-4" onClick={() => setIsProductModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          New Product
+          Novo Produto
         </Button>
       </div>
-      <DataTable
-        columns={extendedColumns}
-        data={products || []}
-        onDelete={handleDeleteProduct}
-      />
+      <DataTable columns={extendedColumns} data={products || []} />
       <AlertDialog
         open={!!productToDelete}
         onOpenChange={() => setProductToDelete(null)}
@@ -171,14 +171,15 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              product and remove its data from our servers.
+              Essa ação não pode ser desfeita. Você tem certeza que deseja
+              excluir esse produto?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Delete
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500">
+              <Trash className="mr-2 h-4 w-4" />
+              Sim, excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

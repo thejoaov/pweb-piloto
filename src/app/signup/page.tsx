@@ -14,17 +14,17 @@ export default function SignUpPage() {
     <div className="container mx-auto flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
-          <CardDescription>Create a new account to get started</CardDescription>
+          <CardTitle>Cadastre-se</CardTitle>
+          <CardDescription>Crie uma conta para começar</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <SignupForm />
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-center text-muted-foreground">
-            Already have an account?{' '}
+            Já tem uma conta?{' '}
             <Link href="/signin" className="text-primary hover:underline">
-              Sign In
+              Faça login
             </Link>
           </p>
         </CardFooter>

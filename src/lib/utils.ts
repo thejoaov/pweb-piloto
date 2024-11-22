@@ -9,6 +9,6 @@ export function formatCurrency(amount: number) {
   return new Intl.NumberFormat('pt-br', {
     style: 'currency',
     currency: 'BRL',
-    minimumSignificantDigits: 1,
+    maximumFractionDigits: 2,
   }).format(amount)
 }

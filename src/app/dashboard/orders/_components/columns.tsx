@@ -1,7 +1,7 @@
 'use client'
 
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, UserCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import type { RouterOutputs } from '~/trpc/react'
@@ -12,19 +12,19 @@ export type Order = Exclude<RouterOutputs['orders']['getById'], null>
 export const columns: ColumnDef<GetOrderList[number]>[] = [
   {
     accessorKey: 'id',
-    header: 'Order ID',
+    header: 'ID (clique para copiar)',
     cell(props) {
       return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
         <div
-          className="w-20 truncate cursor-pointer hover:underline"
+          className="w-fit truncate cursor-pointer hover:underline"
           title={props.row.getValue('id')}
           onClick={() => {
             navigator.clipboard.writeText(props.row.getValue('id'))
-            toast('Copied order ID to clipboard')
+            toast('ID copiado para a área de transferência')
           }}
         >
-          {props.row.getValue('id')}
+          {(props.row.getValue('id') as string).slice(0, 8)}...
         </div>
       )
     },
@@ -44,16 +44,34 @@ export const columns: ColumnDef<GetOrderList[number]>[] = [
     },
     cell: ({ row }) => {
       const amount = Number.parseFloat(row.getValue('total'))
-      const formatted = new Intl.NumberFormat('en-US', {
+      const formatted = new Intl.NumberFormat('pt-BR', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'BRL',
       }).format(amount)
       return <div>{formatted}</div>
     },
   },
   {
     accessorKey: 'user.name',
-    header: 'User',
+    accessorFn: (order) => order.user?.name ?? 'Sem nome',
+    header: 'Usuário',
+    cell: ({ row }) => {
+      const order = row.original
+      return (
+        <div className="flex items-center space-x-2">
+          {order.user?.image ? (
+            <img
+              src={order.user.image}
+              alt={row.getValue('name')}
+              className="w-6 h-6 rounded-full"
+            />
+          ) : (
+            <UserCircle className="w-6 h-6 rounded-full" />
+          )}
+          <div>{order.user?.name}</div>
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'createdAt',
@@ -63,13 +81,38 @@ export const columns: ColumnDef<GetOrderList[number]>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          Created At
+          Criada em
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
     cell: ({ row }) => {
       return new Date(row.getValue('createdAt')).toLocaleString()
+    },
+  },
+  {
+    accessorKey: 'lastUpdatedBy.name',
+    cell: ({ row }) => {
+      const product = row.original
+      return (
+        product.modifiedBy?.name && (
+          <div className="flex items-center">
+            <span className="mr-2">{product.modifiedBy?.name ?? 'N/A'}</span>
+            <span> {new Date(product.updatedAt).toLocaleString()}</span>
+          </div>
+        )
+      )
+    },
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Última modificação
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
     },
   },
 ]

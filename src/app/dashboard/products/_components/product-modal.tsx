@@ -1,7 +1,10 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -10,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { FormField } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import type { Product } from './columns'
@@ -25,37 +29,50 @@ interface ProductModalProps {
   product?: Product
 }
 
+const productSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  price: z.coerce
+    .number()
+    .positive('Valor deve ser positivo')
+    .transform((v) => {
+      return Number.parseFloat(v.toFixed(2))
+    }),
+})
+
 export function ProductModal({
   isOpen,
   onClose,
   onSubmit,
   product,
 }: ProductModalProps) {
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const form = useForm<z.infer<typeof productSchema>>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: product?.name || '',
+      price: product?.price || 0,
+    },
+  })
 
   useEffect(() => {
     if (product) {
-      setName(product.name || '')
-      setPrice(product.price?.toString() || '')
+      form.setValue('name', product.name || '')
+      form.setValue('price', product.price)
     } else {
-      setName('')
-      setPrice('')
+      form.reset()
     }
-  }, [product])
+  }, [form, product])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  const handleSubmit = async (data: z.infer<typeof productSchema>) => {
     await onSubmit({
       id: product?.id,
-      name,
-      price: Number.parseFloat(price),
+      name: data.name,
+      price: data.price,
     })
-    setIsSubmitting(false)
-    setName('')
-    setPrice('')
+    form.reset({
+      name: '',
+      price: 0,
+    })
     onClose()
   }
 
@@ -64,40 +81,44 @@ export function ProductModal({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {product ? 'Edit Product' : 'Create New Product'}
+            {product ? 'Editar Produto' : 'Novo produto'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name
+                Nome
               </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    className="col-span-3"
+                    placeholder="Nome do produto"
+                  />
+                )}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price" className="text-right">
-                Price
+                Valor
               </Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="0.00"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="col-span-3"
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <Input {...field} prefix="R$" className="col-span-3" />
+                )}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {product ? 'Update' : 'Create'} Product
-              {isSubmitting && (
+            <Button type="submit">
+              {product ? 'Atualizar' : 'Salvar'} Produto
+              {form.formState.isSubmitting && (
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
               )}
             </Button>

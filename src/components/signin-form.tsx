@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { Loader } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -21,10 +21,10 @@ import { loginUser } from '~/lib/actions'
 
 const formSchema = z.object({
   email: z.string().email({
-    message: 'Please enter a valid email address.',
+    message: 'Por favor, insira um endereço de email válido.',
   }),
   password: z.string().min(8, {
-    message: 'Password must be at least 8 characters.',
+    message: 'Senha deve ter no mínimo 8 caracteres.',
   }),
 })
 
@@ -46,13 +46,10 @@ export function SigninForm() {
         password: values.password,
       })
       toast('Bem vindo!')
-      if (result?.serverError) {
-        toast(result.serverError)
-      } else {
-        router.push('/dashboard')
-      }
+
+      router.push('/dashboard')
     } catch (error) {
-      toast('Something went wrong. Please try again.')
+      toast('Algo deu errado. Por favor, tente novamente.')
     }
   }
 
@@ -66,7 +63,12 @@ export function SigninForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="john@example.com" {...field} />
+                <Input
+                  placeholder="john@example.com"
+                  type="email"
+                  autoComplete="email"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -77,9 +79,13 @@ export function SigninForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -90,7 +96,8 @@ export function SigninForm() {
           disabled={form.formState.isLoading}
           className="w-full"
         >
-          {form.formState.isLoading ? 'Signing in...' : 'Sign in'}
+          {form.formState.isLoading && <Loader className="mr-2 animate-spin" />}
+          {form.formState.isLoading ? 'Entrando...' : 'Entrar'}
         </Button>
       </form>
     </Form>

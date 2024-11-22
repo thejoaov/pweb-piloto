@@ -64,6 +64,21 @@ export default function OrdersPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  const getStatusTranslation = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendente'
+      case 'processing':
+        return 'Processando'
+      case 'completed':
+        return 'Concluída'
+      case 'cancelled':
+        return 'Cancelada'
+      default:
+        return 'Desconhecido'
+    }
+  }
+
   useEffect(() => {
     if (searchParams.has('new')) {
       setIsOrderModalOpen(true)
@@ -120,7 +135,7 @@ export default function OrdersPage() {
 
   const handleAdvanceOrder = async (order: Order) => {
     if (order.status === 'completed') {
-      toast('Order is already completed')
+      toast('Essa ordem já foi concluída')
       return
     }
 
@@ -130,7 +145,7 @@ export default function OrdersPage() {
       status: nextStatus,
     })
 
-    toast(`Order status changed to ${nextStatus}`)
+    toast(`Status da ordem agora é ${getStatusTranslation(nextStatus)}`)
     refetch()
   }
 
@@ -175,7 +190,7 @@ export default function OrdersPage() {
                   <Timer className="h-4 w-4 mr-2" />
                 )}
                 {order.status === 'processing' && (
-                  <LoaderPinwheel className="h-4 w-4 mr-2" />
+                  <Watch className="h-4 w-4 mr-2" />
                 )}
                 {order.status === 'completed' && (
                   <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -183,9 +198,9 @@ export default function OrdersPage() {
                 {order.status === 'cancelled' && (
                   <CircleX className="h-4 w-4 mr-2" />
                 )}
+                {getStatusTranslation(order.status as string)}
               </>
             )}
-            {order.status}
           </Button>
         )
       },
@@ -193,7 +208,7 @@ export default function OrdersPage() {
     ...columns,
     {
       id: 'actions',
-      header: 'Actions',
+      header: 'Ações',
       cell: ({ row }) => {
         const order = row.original
 
@@ -201,33 +216,37 @@ export default function OrdersPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuLabel>Ações</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
                   navigator.clipboard.writeText(order.id)
-                  toast('Order ID copied to clipboard')
+                  toast('Copiado para a área de transferência')
                 }}
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copy order ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleEditOrder(order)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
+                Copiar ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                disabled={order.status !== 'pending'}
+                onClick={() => handleEditOrder(order)}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={order.status !== 'pending'}
                 onClick={() => handleDeleteOrder(order.id)}
                 className="text-red-500"
               >
                 <Trash className="mr-2 h-4 w-4 text-red" />
-                Delete
+                Excluir
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -239,33 +258,32 @@ export default function OrdersPage() {
   return (
     <div className="container mx-auto p-10">
       <div className="flex justify-between mb-8">
-        <h1 className="text-3xl font-bold mb-8 flex-1">Orders</h1>
+        <h1 className="text-3xl font-bold mb-8 flex-1">Ordens</h1>
         <Button className="ml-4" onClick={() => setIsOrderModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          New Order
+          Nova Ordem
         </Button>
       </div>
-      <DataTable
-        columns={extendedColumns as []}
-        data={orders || []}
-        onDelete={handleDeleteOrder}
-      />
+      <DataTable columns={extendedColumns as []} data={orders || []} />
       <AlertDialog
         open={!!orderToDelete}
         onOpenChange={() => setOrderToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Você tem certeza que deseja excluir essa ordem?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              order and remove its data from our servers.
+              Essa ação não pode ser desfeita. Todos os dados relacionados a
+              essa ordem serão perdidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
-              Delete
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500">
+              <Trash className="mr-2 h-4 w-4" />
+              Sim, excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

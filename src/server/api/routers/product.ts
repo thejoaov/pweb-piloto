@@ -18,13 +18,22 @@ export const productsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.insert(products).values(input)
+      return ctx.db
+        .insert(products)
+        .values({ ...input, createdById: ctx.user?.id })
+        .returning()
     }),
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       const { id } = input
-      return ctx.db.query.products.findFirst({ where: eq(products.id, id) })
+      return ctx.db.query.products.findFirst({
+        where: eq(products.id, id),
+        with: {
+          createdBy: true,
+          modifiedBy: true,
+        },
+      })
     }),
   getList: protectedProcedure
     .input(
@@ -42,14 +51,16 @@ export const productsRouter = createTRPCRouter({
         page = 1,
         perPage = 10,
       } = input
-      const response = await ctx.db
-        .select()
-        .from(products)
-        .limit(perPage)
-        .offset((page - 1) * perPage)
-        .orderBy(
+      const response = await ctx.db.query.products.findMany({
+        offset: (page - 1) * perPage,
+        limit: perPage,
+        orderBy:
           order === 'asc' ? asc(products[orderBy]) : desc(products[orderBy]),
-        )
+        with: {
+          createdBy: true,
+          modifiedBy: true,
+        },
+      })
 
       return response
     }),
@@ -63,7 +74,10 @@ export const productsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...values } = input
-      return ctx.db.update(products).set(values).where(eq(products.id, id))
+      return ctx.db
+        .update(products)
+        .set({ ...values, modifiedById: ctx.user?.id })
+        .where(eq(products.id, id))
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))

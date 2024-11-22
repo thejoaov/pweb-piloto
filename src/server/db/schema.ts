@@ -1,7 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import {
+  doublePrecision,
   integer,
-  pgSchema,
   pgTableCreator,
   text,
   uuid,
@@ -16,10 +16,10 @@ import {
  */
 export const createTable = pgTableCreator((name) => `piloto_${name}`)
 
-const authSchema = pgSchema('auth')
-export const authUsers = authSchema.table('users', {
-  id: uuid('id').primaryKey(),
-})
+// const authSchema = pgSchema('auth')
+// export const authUsers = authSchema.table('users', {
+//   id: uuid('id').primaryKey(),
+// })
 
 export const users = createTable('users', {
   id: uuid('id')
@@ -35,6 +35,7 @@ export const users = createTable('users', {
 
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
+  products: many(products),
 }))
 
 export const products = createTable('product', {
@@ -42,14 +43,26 @@ export const products = createTable('product', {
     .notNull()
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: varchar('name', { length: 255 }),
-  price: integer('price').notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  price: doublePrecision('price').notNull(),
+  createdById: uuid('created_by')
+    .notNull()
+    .references(() => users.id),
+  modifiedById: uuid('modified_by_id').references(() => users.id),
   createdAt: text('created_at').notNull().default(sql`now()`),
   updatedAt: text('updated_at').notNull().default(sql`now()`),
 })
 
-export const productsRelations = relations(products, ({ many }) => ({
+export const productsRelations = relations(products, ({ many, one }) => ({
   orders: many(orderItems),
+  modifiedBy: one(users, {
+    fields: [products.modifiedById],
+    references: [users.id],
+  }),
+  createdBy: one(users, {
+    fields: [products.createdById],
+    references: [users.id],
+  }),
 }))
 
 export const orders = createTable('order', {
@@ -57,9 +70,10 @@ export const orders = createTable('order', {
     .notNull()
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  total: integer('total').notNull(),
-  status: varchar('status', { length: 255 }),
+  total: doublePrecision('total').notNull(),
+  status: varchar('status', { length: 255 }).default('pending'),
   userId: uuid('user_id').references(() => users.id),
+  modifiedById: uuid('modified_by_id').references(() => users.id),
   createdAt: text('created_at').notNull().default(sql`now()`),
   updatedAt: text('updated_at').notNull().default(sql`now()`),
 })
@@ -67,6 +81,10 @@ export const orders = createTable('order', {
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, { fields: [orders.userId], references: [users.id] }),
   items: many(orderItems),
+  modifiedBy: one(users, {
+    fields: [orders.modifiedById],
+    references: [users.id],
+  }),
 }))
 
 export const orderItems = createTable('order_item', {
