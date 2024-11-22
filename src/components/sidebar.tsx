@@ -31,6 +31,7 @@ import {
 } from '~/components/ui/sidebar'
 import { DEFAULT_AUTH_ROUTE } from '~/config/routes'
 import { createClient } from '~/utils/supabase/client'
+import { ModeToggle } from './theme-toggle'
 import { Button } from './ui/button'
 
 export function DashboardSidebar() {
@@ -46,13 +47,16 @@ export function DashboardSidebar() {
   }
 
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar variant="floating">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarHeader>
-                <h2 className="text-lg font-semibold">Tela inicial</h2>
+                <div className="flex items-center">
+                  <h2 className="text-lg flex-1 font-semibold">Tela inicial</h2>
+                  <ModeToggle />
+                </div>
               </SidebarHeader>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
