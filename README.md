@@ -1,29 +1,53 @@
-# Create T3 App
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+<div align="center">
 
-## What's next? How do I make an app with this?
+  <h1>
+    Programação Web
+  
+    IFPI - 2024.1
+  </h>
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+  <img src="https://raw.githubusercontent.com/thejoaov/pweb-piloto/refs/heads/main/public/logo-ifpi.png" width="300px">
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+</div>
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
+### Stack
+- [T3 Stack](https://create.t3.gg/)
+- [Next.js 15](https://nextjs.org)
+- [Supabase](https://supabase.com)
 - [Drizzle](https://orm.drizzle.team)
+- [BiomeJS](https://biomejs.dev/pt-br/)
 - [Tailwind CSS](https://tailwindcss.com)
 - [tRPC](https://trpc.io)
 
-## Learn More
+### Funcionalidades
+- Cadastro de usuários (através de form de `/signup`) com envio de email de confirmação
+- CRUD de produtos, com quantidade e valor, e status de modificação
+- CRUD de ordens/pedidos, com progressão de status e condicionais
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+### Como testar
+- [Vercel](https://pweb-piloto.vercel.app)
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+ou
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+#### Localmente
+- Instale as dependências com
+`pnpm install`
 
-## How do I deploy this?
+Se não tiver o pnpm instalado, instale usando `npm i -g pnpm` ou `corepack install` (se o tiver habilitado)
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- Se tiver [Docker](https://docker.io) instalado, prossiga com [Supabase local](https://supabase.com/docs/guides/local-development)
+
+`pnpm supabase start`
+
+- Copie o conteúdo do arquivo `.env.example` pra um `.env` na raiz do projeto, se necesário crie este arquivo
+
+`cp .env.example .env`
+
+- Rode as [migrations](https://orm.drizzle.team/docs/kit-overview)
+
+`pnpm db:migrate`
+
+- Após isso, rode o projeto com `pnpm dev`
+
+- Se quiser usar a cloud do supabase, crie o projeto lá e coloque depois as variáveis de ambiente de acordo com o projeto supabase criado.
