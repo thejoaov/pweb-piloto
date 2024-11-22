@@ -1,7 +1,7 @@
 'use client'
 
 import { Check, ChevronsUpDown, Loader2, Plus, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '~/components/ui/button'
 import {
   Command,
@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import { cn, formatCurrency } from '~/lib/utils'
+import { cn } from '~/lib/utils'
 import { api } from '~/trpc/react'
 import type { Order } from './columns'
 
@@ -64,51 +64,49 @@ export function OrderModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [openProductId, setOpenProductId] = useState<number | null>(null)
 
-  const { data: products = [] } = api.products.getList.useQuery({
-    perPage: 100,
-  })
+  const { data: products, isLoading: isLoadingProducts } =
+    api.products.getList.useQuery({ perPage: 100 })
 
   useEffect(() => {
     if (order) {
       setStatus(order.status || 'pending')
-      setItems(order.items || [])
+      setItems(order.items)
     } else {
       setStatus('pending')
       setItems([])
     }
   }, [order])
 
-  const calculateTotal = useMemo(() => {
+  const calculateTotal = () => {
     return items.reduce((total, item) => {
       const product = products?.find((p) => p.id === item.productId)
       return total + (product?.price || 0) * item.quantity
     }, 0)
-  }, [items, products])
-
-  const isEditable = (order && order.status === 'pending') || !order
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    if (!isEditable) {
-      return
-    }
-
     e.preventDefault()
     setIsSubmitting(true)
-    await onSubmit({
-      id: order?.id,
-      total: Number(calculateTotal.toFixed(2)),
-      status,
-      userId,
-      items,
-    })
-    setIsSubmitting(false)
-    setStatus('pending')
-    setItems([])
-    onClose()
+    try {
+      await onSubmit({
+        id: order?.id,
+        total: Number(calculateTotal().toFixed(2)),
+        status,
+        userId,
+        items,
+      })
+      setStatus('pending')
+      setItems([])
+      onClose()
+    } catch (error) {
+      console.error('Error submitting order:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const addItem = () => {
-    setItems([...items, { productId: crypto.randomUUID(), quantity: 1 }])
+    setItems([...items, { productId: '', quantity: 1 }])
   }
 
   const removeItem = (index: number) => {
@@ -117,34 +115,103 @@ export function OrderModal({
     }
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    setItems(
-      items.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item,
-      ),
+  const updateItem = (
+    index: number,
+    field: 'productId' | 'quantity',
+    value: string | number,
+  ) => {
+    setItems((prevItems) => {
+      const newItems = [...prevItems]
+      if (field === 'productId') {
+        newItems[index] = {
+          ...newItems[index],
+          productId: value as string,
+          quantity: 1,
+        }
+      } else {
+        newItems[index] = {
+          ...newItems[index],
+          quantity: value,
+        } as { productId: string; quantity: number }
+      }
+      return newItems
+    })
+    if (field === 'productId') {
+      setOpenProductId(null)
+    }
+  }
+
+  const renderProductSelector = (
+    index: number,
+    item: { productId: string; quantity: number },
+  ) => {
+    if (isLoadingProducts || !products) {
+      return <div>Loading products...</div>
+    }
+
+    const availableProducts = products.filter(
+      (product) =>
+        !items.some((item) => item.productId === product.id) ||
+        item.productId === product.id,
+    )
+
+    return (
+      <Popover
+        open={openProductId === index}
+        onOpenChange={(open) => setOpenProductId(open ? index : null)}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            // biome-ignore lint/a11y/useSemanticElements: <explanation>
+            role="combobox"
+            aria-expanded={openProductId === index}
+            className="w-[200px] justify-between"
+          >
+            {item.productId
+              ? products.find((product) => product.id === item.productId)
+                  ?.name || 'Select product...'
+              : 'Select product...'}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Search product..." />
+            <CommandList>
+              <CommandEmpty>No product found.</CommandEmpty>
+              <CommandGroup>
+                {availableProducts.map((product) => (
+                  <CommandItem
+                    key={product.id}
+                    onSelect={() => updateItem(index, 'productId', product.id)}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        item.productId === product.id
+                          ? 'opacity-100'
+                          : 'opacity-0',
+                      )}
+                    />
+                    {product.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     )
   }
 
-  const updateItem = (index: number, productId: string) => {
-    const newItems = items.map((item, _index) =>
-      index === _index ? { ...item, productId } : item,
-    )
-
-    setItems(newItems)
-  }
-
-  const handleClose = () => {
-    setItems([])
-    onClose()
-  }
+  if (!isOpen) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[720px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {order ? 'Editar Order' : 'Criar Nova Ordem'}
-          </DialogTitle>
+          <DialogTitle>{order ? 'Edit Order' : 'Create New Order'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -153,101 +220,32 @@ export function OrderModal({
                 <Label htmlFor="status" className="text-right">
                   Status
                 </Label>
-                <Select
-                  disabled={!isEditable}
-                  value={status}
-                  onValueChange={setStatus}
-                >
+                <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="processing">Processando</SelectItem>
-                    <SelectItem value="completed">Completada</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="grid gap-4">
-              <Label>Produtos</Label>
+              <Label>Order Items</Label>
               {items.map((item, index) => (
-                <div key={item.productId} className="flex items-center gap-2">
-                  <Popover
-                    open={openProductId === index}
-                    onOpenChange={(open) =>
-                      setOpenProductId(open ? index : null)
-                    }
-                  >
-                    <PopoverTrigger asChild disabled={!isEditable}>
-                      <Button
-                        variant="outline"
-                        // biome-ignore lint/a11y/useSemanticElements: <explanation>
-                        role="combobox"
-                        aria-expanded={openProductId === index}
-                        className="w-full justify-between"
-                        disabled={!isEditable}
-                      >
-                        {item.productId
-                          ? products.find(
-                              (product) => product.id === item.productId,
-                            )?.name
-                          : 'Selecione um produto...'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
-                      <Command>
-                        <CommandInput
-                          disabled={!isEditable}
-                          placeholder="Pesquise um produto..."
-                        />
-                        <CommandList>
-                          <CommandEmpty>
-                            Nenhum produto encontrado.
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {products.map((product, index) => (
-                              <CommandItem
-                                key={product.id}
-                                onSelect={() => {
-                                  updateItem(index, product.id)
-                                  setOpenProductId(null)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    item.productId === product.id
-                                      ? 'opacity-100'
-                                      : 'opacity-0',
-                                  )}
-                                />
-                                {product.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <Input
-                    type="number"
-                    disabled
-                    defaultValue={
-                      products.find((p) => p.id === item.productId)?.price ?? 0
-                    }
-                    contentEditable={false}
-                    className="w-32"
-                  />
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                <div key={index} className="flex items-center gap-2">
+                  {renderProductSelector(index, item)}
                   <Input
                     type="number"
                     value={item.quantity}
-                    disabled={!isEditable}
                     onChange={(e) =>
-                      updateQuantity(
-                        item.productId,
+                      updateItem(
+                        index,
+                        'quantity',
                         Math.max(1, Number.parseInt(e.target.value)),
                       )
                     }
@@ -258,29 +256,24 @@ export function OrderModal({
                     type="button"
                     variant="ghost"
                     onClick={() => removeItem(index)}
-                    disabled={!isEditable}
+                    disabled={order && order.status !== 'pending'}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
-              <Button
-                type="button"
-                variant="outline"
-                disabled={items.length === products.length || !isEditable}
-                onClick={addItem}
-              >
+              <Button type="button" variant="outline" onClick={addItem}>
                 <Plus className="mr-2 h-4 w-4" />
-                Adicionar Produto
+                Add Item
               </Button>
             </div>
             <div className="text-right">
-              <strong>Total: ${formatCurrency(calculateTotal)}</strong>
+              <strong>Total: ${calculateTotal().toFixed(2)}</strong>
             </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {order ? 'Atualizar' : 'Criar'} Ordem
+              {order ? 'Update' : 'Create'} Order
               {isSubmitting && (
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
               )}
