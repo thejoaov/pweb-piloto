@@ -30,6 +30,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarTrigger,
 } from '~/components/ui/sidebar'
 import { DEFAULT_AUTH_ROUTE } from '~/config/routes'
 import { createClient } from '~/utils/supabase/client'
@@ -48,14 +49,14 @@ export function DashboardSidebar() {
   }
 
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <h2 className="text-lg font-semibold">Dashboard</h2>
-      </SidebarHeader>
+    <Sidebar collapsible="offcanvas">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarHeader>
+                <h2 className="text-lg font-semibold">Dashboard</h2>
+              </SidebarHeader>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === '/dashboard'}>
                   <Link href="/dashboard">
@@ -115,7 +116,7 @@ export function DashboardSidebar() {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/dashboard/orders/new">New</Link>
+                        <Link href="/dashboard/orders?new=true">New</Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>
@@ -125,6 +126,7 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
         <Button variant="destructive" onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />

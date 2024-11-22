@@ -54,6 +54,8 @@ export function ProductModal({
       price: Number.parseFloat(price),
     })
     setIsSubmitting(false)
+    setName('')
+    setPrice('')
     onClose()
   }
 

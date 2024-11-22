@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { users } from '~/server/db/schema'
-import { createTRPCRouter, publicProcedure } from '../trpc'
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 
 export const authRouter = createTRPCRouter({
   signup: publicProcedure
@@ -36,4 +36,7 @@ export const authRouter = createTRPCRouter({
 
       return user
     }),
+  getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
+    return ctx?.user
+  }),
 })
