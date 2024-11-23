@@ -3,8 +3,7 @@
 
   <h1>
     Programação Web
-  
-    IFPI - 2024.1
+    <h3>IFPI - 2024.1</h3>
   </h>
 
   <img src="https://raw.githubusercontent.com/thejoaov/pweb-piloto/refs/heads/main/public/logo-ifpi.png" width="300px">
