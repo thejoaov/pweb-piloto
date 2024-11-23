@@ -12,7 +12,7 @@ const features = [
     icon: <CheckCircle className="h-8 w-8 text-primary" />,
     title: 'Gerenciamento de produtos',
     description:
-      'Crud completo, com listagem, criação, edição, ordenamento e remoção, de produtos e ordens. Avançe ou cancele as ordens, e veja os detalhes de cada.',
+      'Crud completo, com listagem, criação, edição, ordenamento e remoção, de produtos e pedidos. Avançe ou cancele os pedidos, e veja os detalhes de cada.',
   },
   {
     icon: <Users className="h-8 w-8 text-primary" />,

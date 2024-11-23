@@ -2,6 +2,7 @@
 
 import { Check, ChevronsUpDown, Loader2, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import {
   Command,
@@ -32,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select'
-import { cn } from '~/lib/utils'
+import { cn, formatCurrency } from '~/lib/utils'
 import { api } from '~/trpc/react'
 import type { Order } from './columns'
 
@@ -48,6 +49,7 @@ interface OrderModalProps {
   }) => Promise<void>
   order?: Order
   userId: string
+  readonly?: boolean
 }
 
 export function OrderModal({
@@ -55,6 +57,7 @@ export function OrderModal({
   onClose,
   onSubmit,
   order,
+  readonly = false,
   userId,
 }: OrderModalProps) {
   const [status, setStatus] = useState(order?.status || 'pending')
@@ -78,10 +81,14 @@ export function OrderModal({
   }, [order])
 
   const calculateTotal = () => {
-    return items.reduce((total, item) => {
-      const product = products?.find((p) => p.id === item.productId)
-      return total + (product?.price || 0) * item.quantity
-    }, 0)
+    return Number(
+      items
+        .reduce((total, item) => {
+          const product = products?.find((p) => p.id === item.productId)
+          return total + (product?.price || 0) * item.quantity
+        }, 0)
+        .toFixed(2),
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,10 +105,18 @@ export function OrderModal({
       setStatus('pending')
       setItems([])
       onClose()
-    } catch (error) {
-      console.error('Error submitting order:', error)
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    } catch (error: any) {
+      toast('Falha ao criar pedido', {
+        description: error.message as string,
+        className: 'bg-red-500',
+      })
+      console.error('Falha ao criar pedido', error)
     } finally {
       setIsSubmitting(false)
+      toast('Pedido criado com sucesso', {
+        className: 'bg-green-500',
+      })
     }
   }
 
@@ -146,7 +161,7 @@ export function OrderModal({
     item: { productId: string; quantity: number },
   ) => {
     if (isLoadingProducts || !products) {
-      return <div>Loading products...</div>
+      return <div>Carregando produtos...</div>
     }
 
     const availableProducts = products.filter(
@@ -166,20 +181,24 @@ export function OrderModal({
             // biome-ignore lint/a11y/useSemanticElements: <explanation>
             role="combobox"
             aria-expanded={openProductId === index}
-            className="w-[200px] justify-between"
+            disabled={readonly}
+            className="w-full justify-between"
           >
             {item.productId
               ? products.find((product) => product.id === item.productId)
-                  ?.name || 'Select product...'
-              : 'Select product...'}
+                  ?.name || 'Selecione o produto...'
+              : 'Selecione o produto...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder="Search product..." />
+            <CommandInput
+              disabled={readonly}
+              placeholder="Pesquise o produto..."
+            />
             <CommandList>
-              <CommandEmpty>No product found.</CommandEmpty>
+              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
               <CommandGroup>
                 {availableProducts.map((product) => (
                   <CommandItem
@@ -207,11 +226,21 @@ export function OrderModal({
 
   if (!isOpen) return null
 
+  const getTitle = () => {
+    if (readonly) return 'Detalhes do Pedido'
+    return order ? 'Editar Pedido' : 'Novo Pedido'
+  }
+
+  const getButtonText = () => {
+    if (readonly) return 'Fechar'
+    return order ? 'Salvar Edição' : 'Criar Pedido'
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{order ? 'Edit Order' : 'Create New Order'}</DialogTitle>
+          <DialogTitle>{getTitle()}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -220,26 +249,31 @@ export function OrderModal({
                 <Label htmlFor="status" className="text-right">
                   Status
                 </Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select
+                  disabled={readonly}
+                  value={status}
+                  onValueChange={setStatus}
+                >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="processing">Processando</SelectItem>
+                    <SelectItem value="completed">Concluído</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="grid gap-4">
-              <Label>Order Items</Label>
+              <Label>Itens no pedido</Label>
               {items.map((item, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                 <div key={index} className="flex items-center gap-2">
                   {renderProductSelector(index, item)}
                   <Input
+                    disabled={readonly}
                     type="number"
                     value={item.quantity}
                     onChange={(e) =>
@@ -252,28 +286,41 @@ export function OrderModal({
                     min={1}
                     className="w-20"
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => removeItem(index)}
-                    disabled={order && order.status !== 'pending'}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {!readonly && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removeItem(index)}
+                      disabled={order && order.status !== 'pending'}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={addItem}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
-              </Button>
+              {!readonly && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addItem}
+                  disabled={readonly}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar Item
+                </Button>
+              )}
             </div>
             <div className="text-right">
-              <strong>Total: ${calculateTotal().toFixed(2)}</strong>
+              <strong>Total: {formatCurrency(calculateTotal())}</strong>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {order ? 'Update' : 'Create'} Order
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              onClick={readonly ? onClose : undefined}
+            >
+              {getButtonText()}
               {isSubmitting && (
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
               )}

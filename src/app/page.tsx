@@ -3,6 +3,7 @@ import { FeatureSection } from '~/components/feature-section'
 import { FooterSection } from '~/components/footer-section'
 import { HeroSection } from '~/components/hero-section'
 import { MainNav } from '~/components/main-nav'
+import { ModeToggle } from '~/components/theme-toggle'
 import { Button } from '~/components/ui/button'
 
 export default function LandingPage() {

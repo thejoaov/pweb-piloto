@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ModeToggle } from './theme-toggle'
 
 export function MainNav() {
   return (
@@ -26,6 +27,7 @@ export function MainNav() {
         alt="Avatar"
         className="w-8 h-8 rounded-full"
       />
+      <ModeToggle />
     </nav>
   )
 }

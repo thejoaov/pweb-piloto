@@ -7,6 +7,7 @@ import {
   CircleX,
   Copy,
   Edit,
+  Eye,
   Loader2,
   LoaderPinwheel,
   MoreHorizontal,
@@ -47,6 +48,7 @@ export default function OrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
   const [orderToEdit, setOrderToEdit] = useState<Order | undefined>(undefined)
+  const [orderToView, setOrderToView] = useState<Order | undefined>(undefined)
   const { data: orders, refetch } = api.orders.getList.useQuery({
     perPage: 20,
   })
@@ -128,14 +130,20 @@ export default function OrdersPage() {
     setIsOrderModalOpen(true)
   }
 
+  const handleViewOrder = (order: Order) => {
+    setOrderToView(order)
+    setIsOrderModalOpen(true)
+  }
+
   const handleCloseOrderModal = () => {
     setIsOrderModalOpen(false)
     setOrderToEdit(undefined)
+    setOrderToView(undefined)
   }
 
   const handleAdvanceOrder = async (order: Order) => {
     if (order.status === 'completed') {
-      toast('Essa ordem já foi concluída')
+      toast('Essa pedido já foi concluído')
       return
     }
 
@@ -145,7 +153,9 @@ export default function OrdersPage() {
       status: nextStatus,
     })
 
-    toast(`Status da ordem agora é ${getStatusTranslation(nextStatus)}`)
+    toast(`Status do pedido agora é ${getStatusTranslation(nextStatus)}`, {
+      className: 'bg-green-500',
+    })
     refetch()
   }
 
@@ -232,6 +242,11 @@ export default function OrdersPage() {
                 Copiar ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleViewOrder(order)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={order.status !== 'pending'}
                 onClick={() => handleEditOrder(order)}
@@ -258,10 +273,10 @@ export default function OrdersPage() {
   return (
     <div className="container mx-auto p-10">
       <div className="flex justify-between mb-8">
-        <h1 className="text-3xl font-bold mb-8 flex-1">Ordens</h1>
+        <h1 className="text-3xl font-bold mb-8 flex-1">Pedidos</h1>
         <Button className="ml-4" onClick={() => setIsOrderModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Nova Ordem
+          Novo Pedido
         </Button>
       </div>
       <DataTable columns={extendedColumns as []} data={orders || []} />
@@ -272,11 +287,11 @@ export default function OrdersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Você tem certeza que deseja excluir essa ordem?
+              Você tem certeza que deseja excluir esse pedido?
             </AlertDialogTitle>
             <AlertDialogDescription>
               Essa ação não pode ser desfeita. Todos os dados relacionados a
-              essa ordem serão perdidos.
+              esse pedido serão perdidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -293,7 +308,8 @@ export default function OrdersPage() {
         isOpen={isOrderModalOpen}
         onClose={handleCloseOrderModal}
         onSubmit={handleOrderSubmit}
-        order={orderToEdit}
+        order={orderToEdit || orderToView}
+        readonly={!!orderToView}
       />
     </div>
   )

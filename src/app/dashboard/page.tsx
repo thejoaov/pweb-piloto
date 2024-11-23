@@ -23,7 +23,7 @@ export default function DashboardPage() {
             icon={<Package className="h-4 w-4 text-muted-foreground" />}
           />
           <StatusCard
-            title="Ordens"
+            title="Pedidos"
             value={data?.ordersCount ?? 0}
             icon={<ShoppingCart className="h-4 w-4 text-muted-foreground" />}
           />

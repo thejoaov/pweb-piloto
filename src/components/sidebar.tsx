@@ -106,7 +106,7 @@ export function DashboardSidebar() {
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton>
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    <span>Ordens</span>
+                    <span>Pedidos</span>
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
@@ -120,7 +120,7 @@ export function DashboardSidebar() {
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
                         <Link href="/dashboard/orders?new=true">
-                          Nova ordem
+                          Novo Pedido
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
