@@ -98,7 +98,12 @@ export const columns: ColumnDef<GetOrderList[number]>[] = [
         product.modifiedBy?.name && (
           <div className="flex items-center">
             <span className="mr-2">{product.modifiedBy?.name ?? 'N/A'}</span>
-            <span> {new Date(product.updatedAt).toLocaleString()}</span>
+            <span>
+              {' '}
+              {product.updatedAt
+                ? new Date(product.updatedAt).toLocaleString()
+                : ''}
+            </span>
           </div>
         )
       )

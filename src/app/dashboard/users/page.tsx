@@ -2,7 +2,6 @@
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { Copy, MoreHorizontal, Plus, Trash } from 'lucide-react'
-import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { DataTable } from '~/components/data-table'
@@ -25,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
+import { UserRoles } from '~/server/db/schema'
 import { api } from '~/trpc/react'
 import { type User, columns } from './_components/columns'
 
@@ -79,18 +79,19 @@ export default function UsersPage() {
                 <Copy className="mr-2 h-4 w-4" />
                 Copiar ID do usuário
               </DropdownMenuItem>
-              {user.id !== currentUser?.id && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteUser(user.id)}
-                    className="text-red-500"
-                  >
-                    <Trash className="mr-2 h-4 w-4 text-red" />
-                    Excluir
-                  </DropdownMenuItem>
-                </>
-              )}
+              {user.id !== currentUser?.id &&
+                currentUser?.role === UserRoles.ADMIN && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="text-red-500"
+                    >
+                      <Trash className="mr-2 h-4 w-4 text-red" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuContent>
           </DropdownMenu>
         )

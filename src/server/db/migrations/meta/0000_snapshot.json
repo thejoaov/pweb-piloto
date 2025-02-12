@@ -1,25 +1,9 @@
 {
-  "id": "5b678109-94ad-494e-b3a0-8ad331f16861",
+  "id": "13d9ed3b-f06f-4b3c-bd2f-2c9fab399406",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "auth.users": {
-      "name": "users",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
     "public.piloto_order_item": {
       "name": "piloto_order_item",
       "schema": "",
@@ -47,6 +31,19 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -79,7 +76,10 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.piloto_order": {
       "name": "piloto_order",
@@ -93,19 +93,40 @@
         },
         "total": {
           "name": "total",
-          "type": "integer",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": true
         },
         "status": {
           "name": "status",
-          "type": "varchar(255)",
+          "type": "order_status",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'new'"
         },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_by_id": {
+          "name": "modified_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
           "primaryKey": false,
           "notNull": false
         }
@@ -124,10 +145,97 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "piloto_order_modified_by_id_piloto_users_id_fk": {
+          "name": "piloto_order_modified_by_id_piloto_users_id_fk",
+          "tableFrom": "piloto_order",
+          "tableTo": "piloto_users",
+          "columnsFrom": [
+            "modified_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.piloto_payment": {
+      "name": "piloto_payment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_date": {
+          "name": "payment_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "payment_methods",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "piloto_payment_order_id_piloto_order_id_fk": {
+          "name": "piloto_payment_order_id_piloto_order_id_fk",
+          "tableFrom": "piloto_payment",
+          "tableTo": "piloto_order",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.piloto_product": {
       "name": "piloto_product",
@@ -143,19 +251,138 @@
           "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "price": {
           "name": "price",
-          "type": "integer",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": true
+        },
+        "image_base64": {
+          "name": "image_base64",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modified_by_id": {
+          "name": "modified_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "piloto_product_created_by_piloto_users_id_fk": {
+          "name": "piloto_product_created_by_piloto_users_id_fk",
+          "tableFrom": "piloto_product",
+          "tableTo": "piloto_users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "piloto_product_modified_by_id_piloto_users_id_fk": {
+          "name": "piloto_product_modified_by_id_piloto_users_id_fk",
+          "tableFrom": "piloto_product",
+          "tableTo": "piloto_users",
+          "columnsFrom": [
+            "modified_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.piloto_stock": {
+      "name": "piloto_stock",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "piloto_stock_product_id_piloto_product_id_fk": {
+          "name": "piloto_stock_product_id_piloto_product_id_fk",
+          "tableFrom": "piloto_stock",
+          "tableTo": "piloto_product",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.piloto_users": {
       "name": "piloto_users",
@@ -184,6 +411,25 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "birth_date": {
+          "name": "birth_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -197,12 +443,40 @@
             "email"
           ]
         }
-      }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.order_status": {
+      "name": "order_status",
+      "schema": "public",
+      "values": [
+        "new",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "public.payment_methods": {
+      "name": "payment_methods",
+      "schema": "public",
+      "values": [
+        "cash",
+        "card",
+        "debit",
+        "pix",
+        "ticket"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

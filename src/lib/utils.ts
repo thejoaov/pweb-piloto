@@ -12,3 +12,13 @@ export function formatCurrency(amount: number) {
     maximumFractionDigits: 2,
   }).format(amount)
 }
+
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      resolve(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  })
+}

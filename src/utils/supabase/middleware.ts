@@ -11,9 +11,7 @@ import {
 import { env } from '~/env'
 
 export async function updateSession(request: NextRequest) {
-  const cookieStore = await cookies()
-
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -25,44 +23,32 @@ export async function updateSession(request: NextRequest) {
       autoRefreshToken: true,
     },
     cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value
+      getAll() {
+        return request.cookies.getAll()
       },
-      set(name: string, value: string, options) {
-        try {
-          request.cookies.set({ name, value, ...options })
-        } catch (_error) {
-          console.error(_error)
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+      setAll(cookiesToSet) {
+        for (const cookie of cookiesToSet) {
+          request.cookies.set(cookie)
         }
-      },
-      remove(name: string, options) {
-        try {
-          request.cookies.set({ name, value: '', ...options })
-        } catch (_error) {
-          console.error(_error)
-          // The `delete` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+        for (const cookie of cookiesToSet) {
+          request.cookies.set(cookie)
         }
+        response = NextResponse.next({
+          request,
+        })
       },
     },
   })
 
-  // Get user
   const { data, error } = await supabase.auth.getUser()
 
-  // If protected route and user is not authenticated, redirect to login
   const isProtectedRoute = protectedRoutes.includes(request.nextUrl.pathname)
 
-  if (isProtectedRoute && (error ?? !data.user)) {
+  if (isProtectedRoute && (error || !data.user)) {
     const url = new URL(DEFAULT_AUTH_ROUTE, request.url)
     return NextResponse.redirect(url)
   }
 
-  // Forward authed user to DEFAULT_LOGIN_REDIRECT if auth route
   const isAuthRoute = authRoutes.includes(request.nextUrl.pathname)
 
   if (isAuthRoute && data.user) {
@@ -70,6 +56,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Proceed as normal
   return response
 }

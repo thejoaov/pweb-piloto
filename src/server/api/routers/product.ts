@@ -15,6 +15,7 @@ export const productsRouter = createTRPCRouter({
       z.object({
         name: z.string().min(1),
         price: z.number().positive(),
+        imageBase64: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -70,6 +71,7 @@ export const productsRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().min(1).optional(),
         price: z.number().positive().optional(),
+        imageBase64: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

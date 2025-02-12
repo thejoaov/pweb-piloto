@@ -1,14 +1,14 @@
 create function public.handle_new_supabase_user()
   returns trigger as $$
   begin
-    insert into public.piloto_users (id, name, email, image)
+    insert into public.users (id, name, email, image)
     values (
       new.id,
       COALESCE(
         new.raw_user_meta_data ->> 'name',
         new.raw_user_meta_data ->> 'givenName',
         new.raw_user_meta_data ->> 'familyName',
-        '[redacted]'
+        'Visitante'
       ),
       new.email,
       new.raw_user_meta_data ->> 'photo'

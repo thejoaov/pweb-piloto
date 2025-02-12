@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import * as z from 'zod'
 
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { Button } from '~/components/ui/button'
 import {
   Form,
@@ -36,40 +37,29 @@ const formSchema = z.object({
 
 export function SignupForm() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
+  const { form, action, handleSubmitWithAction } = useHookFormAction(
+    signUp,
+    zodResolver(formSchema),
+    {
+      actionProps: {
+        onSuccess: () => {
+          toast('Cadastro realizado com sucesso!')
+          router.push('/dashboard')
+        },
+        onError: (e) => {
+          console.error(e)
+          toast('Algo deu errado. Por favor, tente novamente.')
+        },
+      },
+      formProps: {},
+      errorMapProps: {},
     },
-  })
-
-  const { execute, result, status } = useAction(signUp)
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    try {
-      execute(values)
-
-      if (!result || status === 'hasErrored') {
-        toast('Algo deu errado. Por favor, tente novamente.')
-      } else {
-        toast('Your account has been created.')
-        router.push('/dashboard')
-      }
-    } catch (error) {
-      toast('Algo deu errado. Por favor, tente novamente.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  )
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmitWithAction} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
@@ -77,7 +67,11 @@ export function SignupForm() {
             <FormItem>
               <FormLabel>Seu nome</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input
+                  placeholder="John Doe"
+                  {...field}
+                  disabled={action.isExecuting}
+                />
               </FormControl>
               <FormDescription>
                 Seu nome será visto por outros usuários.
@@ -93,7 +87,11 @@ export function SignupForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="john@example.com" {...field} />
+                <Input
+                  placeholder="john@example.com"
+                  {...field}
+                  disabled={action.isExecuting}
+                />
               </FormControl>
               <FormDescription>
                 Nunca compartilharemos seu email com ninguém.
@@ -109,7 +107,12 @@ export function SignupForm() {
             <FormItem>
               <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  {...field}
+                  disabled={action.isExecuting}
+                />
               </FormControl>
               <FormDescription>
                 Sua senha deve ter no mínimo 8 caracteres.
@@ -118,9 +121,9 @@ export function SignupForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading && <Loader className="mr-2 animate-spin" />}
-          {isLoading ? 'Cadastrando...' : 'Cadastrar'}
+        <Button type="submit" disabled={action.isExecuting} className="w-full">
+          {action.isExecuting && <Loader className="mr-2 animate-spin" />}
+          {action.isExecuting ? 'Cadastrando...' : 'Cadastrar'}
         </Button>
       </form>
     </Form>

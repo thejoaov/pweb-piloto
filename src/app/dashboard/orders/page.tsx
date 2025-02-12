@@ -40,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { cn } from '~/lib/utils'
+import { OrderItemStatus } from '~/server/db/schema'
 import { api } from '~/trpc/react'
 import { type GetOrderList, type Order, columns } from './_components/columns'
 import { OrderModal } from './_components/order-modal'
@@ -68,13 +69,13 @@ export default function OrdersPage() {
 
   const getStatusTranslation = (status: string) => {
     switch (status) {
-      case 'pending':
+      case OrderItemStatus.NEW:
         return 'Pendente'
-      case 'processing':
+      case OrderItemStatus.IN_PROGRESS:
         return 'Processando'
-      case 'completed':
+      case OrderItemStatus.COMPLETED:
         return 'Concluída'
-      case 'cancelled':
+      case OrderItemStatus.CANCELLED:
         return 'Cancelada'
       default:
         return 'Desconhecido'
@@ -101,7 +102,7 @@ export default function OrdersPage() {
   const handleOrderSubmit = async (orderData: {
     id?: string
     total: number
-    status: string
+    status: OrderItemStatus
     userId: string
     items: { productId: string; quantity: number }[]
   }) => {
@@ -142,12 +143,15 @@ export default function OrdersPage() {
   }
 
   const handleAdvanceOrder = async (order: Order) => {
-    if (order.status === 'completed') {
+    if (order.status === OrderItemStatus.COMPLETED) {
       toast('Essa pedido já foi concluído')
       return
     }
 
-    const nextStatus = order.status === 'pending' ? 'processing' : 'completed'
+    const nextStatus =
+      order.status === OrderItemStatus.NEW
+        ? OrderItemStatus.IN_PROGRESS
+        : OrderItemStatus.COMPLETED
     await advanceStatusApi.mutateAsync({
       id: order.id,
       status: nextStatus,
@@ -181,31 +185,33 @@ export default function OrdersPage() {
             variant="ghost"
             disabled={
               advanceStatusApi.isPending ||
-              ['completed', 'canceled'].includes(order.status as string)
+              [OrderItemStatus.COMPLETED, OrderItemStatus.CANCELLED].includes(
+                order.status as OrderItemStatus,
+              )
             }
             onClick={() => handleAdvanceOrder(order)}
             className={cn(
               'h-8 w-fit p-0',
-              order.status === 'pending' && 'text-blue-500',
-              order.status === 'processing' && 'text-yellow-600',
-              order.status === 'completed' && 'text-green-500',
-              order.status === 'cancelled' && 'text-red-500',
+              order.status === OrderItemStatus.NEW && 'text-blue-500',
+              order.status === OrderItemStatus.IN_PROGRESS && 'text-yellow-600',
+              order.status === OrderItemStatus.COMPLETED && 'text-green-500',
+              order.status === OrderItemStatus.CANCELLED && 'text-red-500',
             )}
           >
             {advanceStatusApi.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                {order.status === 'pending' && (
+                {order.status === OrderItemStatus.NEW && (
                   <Timer className="h-4 w-4 mr-2" />
                 )}
-                {order.status === 'processing' && (
+                {order.status === OrderItemStatus.IN_PROGRESS && (
                   <Watch className="h-4 w-4 mr-2" />
                 )}
-                {order.status === 'completed' && (
+                {order.status === OrderItemStatus.COMPLETED && (
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                 )}
-                {order.status === 'cancelled' && (
+                {order.status === OrderItemStatus.CANCELLED && (
                   <CircleX className="h-4 w-4 mr-2" />
                 )}
                 {getStatusTranslation(order.status as string)}
@@ -248,7 +254,7 @@ export default function OrdersPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={order.status !== 'pending'}
+                disabled={order.status !== OrderItemStatus.NEW}
                 onClick={() => handleEditOrder(order)}
               >
                 <Edit className="mr-2 h-4 w-4" />
@@ -256,7 +262,7 @@ export default function OrdersPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={order.status !== 'pending'}
+                disabled={order.status !== OrderItemStatus.NEW}
                 onClick={() => handleDeleteOrder(order.id)}
                 className="text-red-500"
               >

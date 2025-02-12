@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { cn, formatCurrency } from '~/lib/utils'
+import { OrderItemStatus } from '~/server/db/schema'
 import { api } from '~/trpc/react'
 import type { Order } from './columns'
 
@@ -43,7 +44,7 @@ interface OrderModalProps {
   onSubmit: (orderData: {
     id?: string
     total: number
-    status: string
+    status: OrderItemStatus
     userId: string
     items: { productId: string; quantity: number }[]
   }) => Promise<void>
@@ -60,7 +61,9 @@ export function OrderModal({
   readonly = false,
   userId,
 }: OrderModalProps) {
-  const [status, setStatus] = useState(order?.status || 'pending')
+  const [status, setStatus] = useState<`${OrderItemStatus}`>(
+    order?.status || OrderItemStatus.IN_PROGRESS,
+  )
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>(
     [],
   )
@@ -72,10 +75,10 @@ export function OrderModal({
 
   useEffect(() => {
     if (order) {
-      setStatus(order.status || 'pending')
+      setStatus(order.status || OrderItemStatus.IN_PROGRESS)
       setItems(order.items)
     } else {
-      setStatus('pending')
+      setStatus(OrderItemStatus.IN_PROGRESS)
       setItems([])
     }
   }, [order])
@@ -98,11 +101,11 @@ export function OrderModal({
       await onSubmit({
         id: order?.id,
         total: Number(calculateTotal().toFixed(2)),
-        status,
+        status: status as OrderItemStatus,
         userId,
         items,
       })
-      setStatus('pending')
+      setStatus(OrderItemStatus.IN_PROGRESS)
       setItems([])
       onClose()
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -125,7 +128,7 @@ export function OrderModal({
   }
 
   const removeItem = (index: number) => {
-    if (!order || order.status === 'pending') {
+    if (!order || order.status === OrderItemStatus.IN_PROGRESS) {
       setItems(items.filter((_, i) => i !== index))
     }
   }
@@ -252,13 +255,13 @@ export function OrderModal({
                 <Select
                   disabled={readonly}
                   value={status}
-                  onValueChange={setStatus}
+                  onValueChange={(value) => setStatus(value as OrderItemStatus)}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="in_progress">Pendente</SelectItem>
                     <SelectItem value="processing">Processando</SelectItem>
                     <SelectItem value="completed">Concluído</SelectItem>
                     <SelectItem value="cancelled">Cancelado</SelectItem>
@@ -291,7 +294,9 @@ export function OrderModal({
                       type="button"
                       variant="ghost"
                       onClick={() => removeItem(index)}
-                      disabled={order && order.status !== 'pending'}
+                      disabled={
+                        order && order.status !== OrderItemStatus.IN_PROGRESS
+                      }
                     >
                       <X className="h-4 w-4" />
                     </Button>

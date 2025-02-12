@@ -69,17 +69,20 @@ export default function ProductsPage() {
     id?: string
     name: string
     price: number
+    imageBase64: string
   }) => {
     if (productData.id) {
       await updateProductApi.mutateAsync({
         id: productData.id,
         name: productData.name,
         price: productData.price,
+        imageBase64: productData.imageBase64,
       })
     } else {
       await createProductApi.mutateAsync({
         name: productData.name,
         price: productData.price,
+        imageBase64: productData.imageBase64,
       })
     }
     refetch()

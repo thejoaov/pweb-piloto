@@ -15,6 +15,13 @@
     "attributePosition": "auto",
     "bracketSpacing": true
   },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noConstEnum": "off"
+      }
+    }
+  },
   "javascript": {
     "formatter": {
       "jsxQuoteStyle": "double",

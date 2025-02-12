@@ -1,12 +1,12 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { Loader } from 'lucide-react'
+import { revalidatePath } from 'next/cache'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import * as z from 'zod'
-
 import { Button } from '~/components/ui/button'
 import {
   Form,
@@ -31,31 +31,27 @@ const formSchema = z.object({
 export function SigninForm() {
   const router = useRouter()
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
+  const { form, action, handleSubmitWithAction } = useHookFormAction(
+    loginUser,
+    zodResolver(formSchema),
+    {
+      actionProps: {
+        onSuccess: () => {
+          toast('Bem-vindo de volta!')
+          router.push('/dashboard')
+        },
+        onError: (e) => {
+          toast('Algo deu errado. Por favor, tente novamente.')
+        },
+      },
+      formProps: {},
+      errorMapProps: {},
     },
-  })
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      const result = await loginUser({
-        email: values.email,
-        password: values.password,
-      })
-      toast('Bem vindo!')
-
-      router.push('/dashboard')
-    } catch (error) {
-      toast('Algo deu errado. Por favor, tente novamente.')
-    }
-  }
+  )
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmitWithAction} className="space-y-8">
         <FormField
           control={form.control}
           name="email"
@@ -67,6 +63,7 @@ export function SigninForm() {
                   placeholder="john@example.com"
                   type="email"
                   autoComplete="email"
+                  disabled={action.isExecuting}
                   {...field}
                 />
               </FormControl>
@@ -84,6 +81,7 @@ export function SigninForm() {
                 <Input
                   type="password"
                   autoComplete="current-password"
+                  disabled={action.isExecuting}
                   {...field}
                 />
               </FormControl>
@@ -91,13 +89,9 @@ export function SigninForm() {
             </FormItem>
           )}
         />
-        <Button
-          type="submit"
-          disabled={form.formState.isLoading}
-          className="w-full"
-        >
-          {form.formState.isLoading && <Loader className="mr-2 animate-spin" />}
-          {form.formState.isLoading ? 'Entrando...' : 'Entrar'}
+        <Button type="submit" disabled={action.isExecuting} className="w-full">
+          {action.isExecuting && <Loader className="mr-2 animate-spin" />}
+          {action.isExecuting ? 'Entrando...' : 'Entrar'}
         </Button>
       </form>
     </Form>

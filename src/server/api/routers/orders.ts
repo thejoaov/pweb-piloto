@@ -1,6 +1,6 @@
 import { asc, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { orderItems, orders } from '~/server/db/schema'
+import { OrderItemStatus, orderItems, orders } from '~/server/db/schema'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { paginationSchema } from '../utils'
 
@@ -11,7 +11,12 @@ const orderItemSchema = z.object({
 
 const createOrderSchema = z.object({
   total: z.number().nonnegative(),
-  status: z.string(),
+  status: z.enum([
+    OrderItemStatus.NEW,
+    OrderItemStatus.IN_PROGRESS,
+    OrderItemStatus.COMPLETED,
+    OrderItemStatus.CANCELLED,
+  ]),
   userId: z.string().uuid(),
   items: z.array(orderItemSchema),
 })
