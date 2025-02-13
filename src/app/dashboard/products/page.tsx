@@ -70,19 +70,23 @@ export default function ProductsPage() {
     name: string
     price: number
     imageBase64: string
+    quantity: number
   }) => {
+    console.log(productData)
     if (productData.id) {
       await updateProductApi.mutateAsync({
         id: productData.id,
         name: productData.name,
         price: productData.price,
         imageBase64: productData.imageBase64,
+        quantity: productData.quantity,
       })
     } else {
       await createProductApi.mutateAsync({
         name: productData.name,
         price: productData.price,
         imageBase64: productData.imageBase64,
+        quantity: productData.quantity,
       })
     }
     refetch()

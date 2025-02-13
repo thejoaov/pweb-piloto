@@ -10,6 +10,6 @@ export default {
   dbCredentials: {
     url: nonPoolingUrl
   },
-  tablesFilter: ["piloto_*"],
+  tablesFilter: ["cadweb_*"],
   out: "./src/server/db/migrations",
 } satisfies Config;

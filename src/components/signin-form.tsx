@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { Loader } from 'lucide-react'
-import { revalidatePath } from 'next/cache'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import * as z from 'zod'

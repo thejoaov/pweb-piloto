@@ -1,28 +1,53 @@
 import { z } from 'zod'
 
+import { TRPCError } from '@trpc/server'
 import { asc, desc, eq } from 'drizzle-orm'
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from '~/server/api/trpc'
-import { products } from '~/server/db/schema'
+import {
+  productCreateSchema,
+  productSelectSchema,
+  products,
+  stock,
+} from '~/server/db/schema'
 import { paginationSchema } from '../utils'
 
 export const productsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
-      z.object({
-        name: z.string().min(1),
-        price: z.number().positive(),
-        imageBase64: z.string().optional(),
+      productCreateSchema.omit({ createdById: true, stockId: true }).extend({
+        quantity: z.number().min(0).max(1000000),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db
-        .insert(products)
-        .values({ ...input, createdById: ctx.user?.id })
+      const [newProductStock] = await ctx.db
+        .insert(stock)
+        .values({
+          quantity: input.quantity,
+        })
         .returning()
+
+      if (!newProductStock) {
+        throw new Error('Failed to create product stock')
+      }
+
+      const [newProduct] = await ctx.db
+        .insert(products)
+        .values({
+          ...input,
+          createdById: ctx.user?.id,
+          stockId: newProductStock.id,
+        })
+        .returning()
+
+      if (!newProduct) {
+        throw new Error('Failed to create product')
+      }
+
+      return newProduct
     }),
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
@@ -33,6 +58,7 @@ export const productsRouter = createTRPCRouter({
         with: {
           createdBy: true,
           modifiedBy: true,
+          stock: true,
         },
       })
     }),
@@ -60,6 +86,7 @@ export const productsRouter = createTRPCRouter({
         with: {
           createdBy: true,
           modifiedBy: true,
+          stock: true,
         },
       })
 
@@ -67,20 +94,48 @@ export const productsRouter = createTRPCRouter({
     }),
   update: protectedProcedure
     .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1).optional(),
-        price: z.number().positive().optional(),
-        imageBase64: z.string().optional(),
-      }),
+      productSelectSchema.partial().merge(
+        z.object({
+          id: z.string().uuid(),
+          quantity: z.number().min(0).max(1000000),
+        }),
+      ),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...values } = input
-      return ctx.db
+
+      const [newProduct] = await ctx.db
         .update(products)
         .set({ ...values, modifiedById: ctx.user?.id })
         .where(eq(products.id, id))
+        .returning()
+
+      if (!newProduct) {
+        throw new Error('Failed to update product')
+      }
+
+      if (input.quantity) {
+        await ctx.db.update(stock).set({
+          id: newProduct.stockId,
+          quantity: input.quantity,
+        })
+      }
+
+      return newProduct
     }),
+
+  updateProductStock: protectedProcedure
+    .input(
+      z.object({
+        stockId: z.string().uuid(),
+        quantity: z.number().min(0).max(1000000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { stockId, quantity } = input
+      return ctx.db.update(stock).set({ quantity }).where(eq(stock.id, stockId))
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {

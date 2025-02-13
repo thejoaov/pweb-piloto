@@ -1,11 +1,11 @@
 {
-  "id": "d08dc9a8-fb5d-4b54-88a8-aa34fb72fbbc",
-  "prevId": "13d9ed3b-f06f-4b3c-bd2f-2c9fab399406",
+  "id": "b9d0b2a5-6dc1-40c1-945e-d93c0e23b363",
+  "prevId": "7b1e9db0-0ab9-46f1-9bbe-00d8a5439943",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.piloto_order_item": {
-      "name": "piloto_order_item",
+    "public.cadweb_order_item": {
+      "name": "cadweb_order_item",
       "schema": "",
       "columns": {
         "id": {
@@ -48,26 +48,26 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "piloto_order_item_order_id_piloto_order_id_fk": {
-          "name": "piloto_order_item_order_id_piloto_order_id_fk",
-          "tableFrom": "piloto_order_item",
+        "cadweb_order_item_order_id_cadweb_order_id_fk": {
+          "name": "cadweb_order_item_order_id_cadweb_order_id_fk",
+          "tableFrom": "cadweb_order_item",
           "columnsFrom": [
             "order_id"
           ],
-          "tableTo": "piloto_order",
+          "tableTo": "cadweb_order",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
-        "piloto_order_item_product_id_piloto_product_id_fk": {
-          "name": "piloto_order_item_product_id_piloto_product_id_fk",
-          "tableFrom": "piloto_order_item",
+        "cadweb_order_item_product_id_cadweb_product_id_fk": {
+          "name": "cadweb_order_item_product_id_cadweb_product_id_fk",
+          "tableFrom": "cadweb_order_item",
           "columnsFrom": [
             "product_id"
           ],
-          "tableTo": "piloto_product",
+          "tableTo": "cadweb_product",
           "columnsTo": [
             "id"
           ],
@@ -81,8 +81,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.piloto_order": {
-      "name": "piloto_order",
+    "public.cadweb_order": {
+      "name": "cadweb_order",
       "schema": "",
       "columns": {
         "id": {
@@ -133,31 +133,31 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "piloto_order_user_id_piloto_users_id_fk": {
-          "name": "piloto_order_user_id_piloto_users_id_fk",
-          "tableFrom": "piloto_order",
+        "cadweb_order_user_id_cadweb_users_id_fk": {
+          "name": "cadweb_order_user_id_cadweb_users_id_fk",
+          "tableFrom": "cadweb_order",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "piloto_users",
+          "tableTo": "cadweb_users",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "set null"
         },
-        "piloto_order_modified_by_id_piloto_users_id_fk": {
-          "name": "piloto_order_modified_by_id_piloto_users_id_fk",
-          "tableFrom": "piloto_order",
+        "cadweb_order_modified_by_id_cadweb_users_id_fk": {
+          "name": "cadweb_order_modified_by_id_cadweb_users_id_fk",
+          "tableFrom": "cadweb_order",
           "columnsFrom": [
             "modified_by_id"
           ],
-          "tableTo": "piloto_users",
+          "tableTo": "cadweb_users",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -166,8 +166,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.piloto_payment": {
-      "name": "piloto_payment",
+    "public.cadweb_payment": {
+      "name": "cadweb_payment",
       "schema": "",
       "columns": {
         "id": {
@@ -217,18 +217,18 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "piloto_payment_order_id_piloto_order_id_fk": {
-          "name": "piloto_payment_order_id_piloto_order_id_fk",
-          "tableFrom": "piloto_payment",
+        "cadweb_payment_order_id_cadweb_order_id_fk": {
+          "name": "cadweb_payment_order_id_cadweb_order_id_fk",
+          "tableFrom": "cadweb_payment",
           "columnsFrom": [
             "order_id"
           ],
-          "tableTo": "piloto_order",
+          "tableTo": "cadweb_order",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -237,8 +237,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.piloto_product": {
-      "name": "piloto_product",
+    "public.cadweb_product": {
+      "name": "cadweb_product",
       "schema": "",
       "columns": {
         "id": {
@@ -271,6 +271,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "stock_id": {
+          "name": "stock_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "modified_by_id": {
           "name": "modified_by_id",
           "type": "uuid",
@@ -293,26 +299,39 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "piloto_product_created_by_piloto_users_id_fk": {
-          "name": "piloto_product_created_by_piloto_users_id_fk",
-          "tableFrom": "piloto_product",
+        "cadweb_product_created_by_cadweb_users_id_fk": {
+          "name": "cadweb_product_created_by_cadweb_users_id_fk",
+          "tableFrom": "cadweb_product",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "piloto_users",
+          "tableTo": "cadweb_users",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "set null"
         },
-        "piloto_product_modified_by_id_piloto_users_id_fk": {
-          "name": "piloto_product_modified_by_id_piloto_users_id_fk",
-          "tableFrom": "piloto_product",
+        "cadweb_product_stock_id_cadweb_stock_id_fk": {
+          "name": "cadweb_product_stock_id_cadweb_stock_id_fk",
+          "tableFrom": "cadweb_product",
+          "columnsFrom": [
+            "stock_id"
+          ],
+          "tableTo": "cadweb_stock",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "cadweb_product_modified_by_id_cadweb_users_id_fk": {
+          "name": "cadweb_product_modified_by_id_cadweb_users_id_fk",
+          "tableFrom": "cadweb_product",
           "columnsFrom": [
             "modified_by_id"
           ],
-          "tableTo": "piloto_users",
+          "tableTo": "cadweb_users",
           "columnsTo": [
             "id"
           ],
@@ -326,8 +345,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.piloto_stock": {
-      "name": "piloto_stock",
+    "public.cadweb_stock": {
+      "name": "cadweb_stock",
       "schema": "",
       "columns": {
         "id": {
@@ -339,12 +358,6 @@
         "quantity": {
           "name": "quantity",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "product_id": {
-          "name": "product_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -363,29 +376,15 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "piloto_stock_product_id_piloto_product_id_fk": {
-          "name": "piloto_stock_product_id_piloto_product_id_fk",
-          "tableFrom": "piloto_stock",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "tableTo": "piloto_product",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.piloto_users": {
-      "name": "piloto_users",
+    "public.cadweb_users": {
+      "name": "cadweb_users",
       "schema": "",
       "columns": {
         "id": {
@@ -412,6 +411,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "role": {
+          "name": "role",
+          "type": "user_roles",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
         "birth_date": {
           "name": "birth_date",
           "type": "text",
@@ -433,11 +440,26 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "users_id_fk": {
+          "name": "users_id_fk",
+          "tableFrom": "cadweb_users",
+          "columnsFrom": [
+            "id"
+          ],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "piloto_users_email_unique": {
-          "name": "piloto_users_email_unique",
+        "cadweb_users_email_unique": {
+          "name": "cadweb_users_email_unique",
           "columns": [
             "email"
           ],
@@ -469,6 +491,14 @@
         "debit",
         "pix",
         "ticket"
+      ]
+    },
+    "public.user_roles": {
+      "name": "user_roles",
+      "schema": "public",
+      "values": [
+        "admin",
+        "user"
       ]
     }
   },

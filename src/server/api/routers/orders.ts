@@ -1,29 +1,18 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
-import { OrderItemStatus, orderItems, orders } from '~/server/db/schema'
+import {
+  OrderItemStatus,
+  orderCreateSchema,
+  orderItemCreateSchema,
+  orderItems,
+  orderSelectSchema,
+  orders,
+  productSelectSchema,
+  products,
+  stock,
+} from '~/server/db/schema'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { paginationSchema } from '../utils'
-
-const orderItemSchema = z.object({
-  productId: z.string().uuid(),
-  quantity: z.number().int().positive(),
-})
-
-const createOrderSchema = z.object({
-  total: z.number().nonnegative(),
-  status: z.enum([
-    OrderItemStatus.NEW,
-    OrderItemStatus.IN_PROGRESS,
-    OrderItemStatus.COMPLETED,
-    OrderItemStatus.CANCELLED,
-  ]),
-  userId: z.string().uuid(),
-  items: z.array(orderItemSchema),
-})
-
-const updateOrderSchema = createOrderSchema.partial().extend({
-  id: z.string().uuid(),
-})
 
 export const ordersRouter = createTRPCRouter({
   getList: protectedProcedure
@@ -52,11 +41,7 @@ export const ordersRouter = createTRPCRouter({
         with: {
           modifiedBy: true,
           user: true,
-          items: {
-            with: {
-              product: true,
-            },
-          },
+          items: true,
         },
       })
 
@@ -70,11 +55,7 @@ export const ordersRouter = createTRPCRouter({
         where: eq(orders.id, input.id),
         with: {
           modifiedBy: true,
-          items: {
-            with: {
-              product: true,
-            },
-          },
+          items: true,
         },
       })
 
@@ -86,46 +67,99 @@ export const ordersRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure
-    .input(createOrderSchema)
+    .input(
+      orderCreateSchema.extend({
+        items: z.array(productSelectSchema),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
-      const { items, ...orderData } = input
-
-      const [createdOrder] = await ctx.db
+      const order = await ctx.db
         .insert(orders)
-        .values({ ...orderData, userId: ctx.user?.id })
+        .values({
+          ...input,
+          userId: ctx.user?.id,
+        })
         .returning()
 
-      await ctx.db.insert(orderItems).values(
-        items.map((item) => ({
-          orderId: createdOrder?.id as string,
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      )
+      if (!order) {
+        throw new Error('Order not created')
+      }
 
-      return createdOrder
+      return order
     }),
 
   update: protectedProcedure
-    .input(updateOrderSchema)
+    .input(
+      orderCreateSchema.extend({
+        items: z.array(orderItemCreateSchema),
+        id: z.string().uuid(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const { id, items, ...orderData } = input
+
+      const getOrderItems = await ctx.db.query.orderItems.findMany({
+        where: eq(orderItems.orderId, id),
+        with: {
+          product: {
+            with: {
+              stock: true,
+            },
+          },
+        },
+      })
+
+      if (items?.length) {
+        await ctx.db
+          .insert(orderItems)
+          .values(
+            items.map((item) => ({
+              orderId: id,
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          )
+          .onConflictDoUpdate({
+            target: orderItems.orderId,
+            set: {
+              quantity: sql`${orderItems.quantity} + ${items.map((item) => item.quantity)}`,
+            },
+          })
+      }
+
+      if (orderData.status === OrderItemStatus.CANCELLED) {
+        await ctx.db.transaction(async (tx) => {
+          for (const orderProduct of getOrderItems) {
+            await tx
+              .update(stock)
+              .set({
+                quantity:
+                  orderProduct.product.stock.quantity + orderProduct.quantity,
+              })
+              .where(eq(stock.id, orderProduct.product.stock.id))
+          }
+        })
+      }
+
+      if (orderData.status === OrderItemStatus.COMPLETED) {
+        await ctx.db.transaction(async (tx) => {
+          for (const orderProduct of getOrderItems) {
+            await tx
+              .update(stock)
+              .set({
+                quantity:
+                  orderProduct.product.stock.quantity - orderProduct.quantity,
+              })
+              .where(eq(stock.id, orderProduct.product.stock.id))
+          }
+        })
+      }
 
       await ctx.db
         .update(orders)
         .set({ ...orderData, modifiedById: ctx.user?.id })
         .where(eq(orders.id, id))
-
-      // Insert new order items
-      if (items?.length) {
-        await ctx.db.insert(orderItems).values(
-          items.map((item) => ({
-            orderId: id,
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        )
-      }
+        .returning()
 
       return { success: true }
     }),

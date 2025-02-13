@@ -2,8 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { StyledDropzone } from '~/components/dropzone'
@@ -19,6 +18,7 @@ import { FormField } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { fileToBase64 } from '~/lib/utils'
+import { productCreateSchema } from '~/server/db/schema'
 import type { Product } from './columns'
 
 interface ProductModalProps {
@@ -29,15 +29,20 @@ interface ProductModalProps {
     name: string
     price: number
     imageBase64: string
+    quantity: number
   }) => Promise<void>
   product?: Product
 }
 
 const productSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, 'Nome é obrigatório'),
   imageBase64: z.string(),
-  fileName: z.string(),
+  name: z.string().min(1, 'Nome é obrigatório'),
+  quantity: z.coerce
+    .number()
+    .positive('Quantidade deve ser positivo')
+    .min(1)
+    .max(1000000),
   price: z.coerce
     .number()
     .positive('Valor deve ser positivo')
@@ -58,6 +63,7 @@ export function ProductModal({
       name: product?.name || '',
       price: product?.price || 0,
       imageBase64: product?.imageBase64 || '',
+      quantity: product?.stock.quantity || 0,
     },
   })
 
@@ -66,22 +72,12 @@ export function ProductModal({
       form.setValue('name', product.name || '')
       form.setValue('price', product.price)
       form.setValue('imageBase64', product.imageBase64 || '')
+      form.setValue('id', product.id)
+      form.setValue('quantity', product.stock.quantity || 0)
     } else {
       form.reset()
     }
   }, [form, product])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: async (files) => {
-      const file = files[0]
-      if (!file) return
-
-      const base64 = await fileToBase64(file)
-
-      form.setValue('imageBase64', base64)
-      form.setValue('fileName', file.name)
-    },
-  })
 
   const handleSubmit = async (data: z.infer<typeof productSchema>) => {
     await onSubmit({
@@ -89,11 +85,14 @@ export function ProductModal({
       name: data.name,
       price: data.price,
       imageBase64: data.imageBase64,
+      quantity: data.quantity,
     })
     form.reset({
+      id: undefined,
       name: '',
       price: 0,
       imageBase64: '',
+      quantity: 0,
     })
     onClose()
   }
@@ -132,7 +131,6 @@ export function ProductModal({
                   if (!file) return
                   const base64 = await fileToBase64(file)
                   form.setValue('imageBase64', base64)
-                  form.setValue('fileName', file.name)
                 }}
               />
               {form.formState.errors.imageBase64 && (
@@ -156,22 +154,49 @@ export function ProductModal({
                   />
                 )}
               />
+              {form.formState.errors.name && (
+                <p className="text-red-500">
+                  {form.formState.errors.name.message}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price" className="text-right">
                 Valor
               </Label>
               <FormField
-                control={form.control}
                 name="price"
+                control={form.control}
                 render={({ field }) => (
                   <Input {...field} prefix="R$" className="col-span-3" />
                 )}
               />
+              {form.formState.errors.price && (
+                <p className="text-red-500">
+                  {form.formState.errors.price.message}
+                </p>
+              )}
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantity" className="text-right">
+                Quantidade
+              </Label>
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <Input {...field} className="col-span-3" />
+                )}
+              />
+              {form.formState.errors.quantity && (
+                <p className="text-red-500">
+                  {form.formState.errors.quantity.message}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">
+            <Button type="submit" disabled={!form.formState.isValid}>
               {product ? 'Atualizar' : 'Salvar'} Produto
               {form.formState.isSubmitting && (
                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />

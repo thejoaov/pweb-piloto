@@ -17,7 +17,38 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
 
 const adminAuthClient = supabase.auth.admin
 
-async function main() {
+const createAdminUser = async () => {
+  const { data, error } = await adminAuthClient.createUser({
+    email: 'jvictorsantos852@gmail.com',
+    password: process.env.ADMIN_PASSWORD,
+    email_confirm: true,
+    user_metadata: {
+      name: 'Joao Victor',
+    },
+  })
+  if (!data.user || error) {
+    console.error('Failed to create user:', error)
+    throw new Error('Failed to create supabase user')
+  }
+  // Wait 2 seconds to ensure the user is created
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, data.user.email as string),
+  })
+
+  if (!user) {
+    throw new Error('Failed to create user')
+  }
+  await db
+    .update(users)
+    .set({ role: UserRoles.ADMIN })
+    .where(eq(users.id, user.id))
+
+  console.log('Admin user created:', data.user)
+}
+
+const createUsers = async () => {
   const usersCreated = []
 
   for (let i = 0; i < USER_COUNT; i++) {
@@ -41,42 +72,12 @@ async function main() {
   }
 
   await writeFile('./users.json', JSON.stringify(usersCreated, null, 2))
+  console.log('Users created:', usersCreated)
+}
 
-  // ######## ADMIMN USER ########
-  // const { data, error } = await adminAuthClient.createUser({
-  //   email: 'jvictorsantos852@gmail.com',
-  //   password: '',
-  //   email_confirm: true,
-  //   user_metadata: {
-  //     name: 'Joao Victor',
-  //   },
-  // })
-
-  // if (!data.user || error) {
-  //   console.error('Failed to create user:', error)
-  //   throw new Error('Failed to create supabase user')
-  // }
-
-  // // Wait 2 seconds to ensure the user is created
-  // await new Promise((resolve) => setTimeout(resolve, 2000))
-
-  // const user = await db.query.users.findFirst({
-  //   where: eq(users.id, data.user.id),
-  // })
-
-  // if (!user) {
-  //   throw new Error('Failed to create user')
-  // }
-
-  // console.log('User created:', user)
-
-  // // Update to admin role
-  // const adminUser = await db
-  //   .update(users)
-  //   .set({ role: UserRoles.ADMIN })
-  //   .where(eq(users.id, user.id))
-  //   .returning()
-  // console.log('User updated to admin:', adminUser)
+async function main() {
+  await createAdminUser()
+  await createUsers()
 }
 
 main()

@@ -1,7 +1,13 @@
 'use client'
 
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Circle, DollarSign, Package } from 'lucide-react'
+import {
+  ArrowUpDown,
+  Circle,
+  DollarSign,
+  Package,
+  Warehouse,
+} from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { formatCurrency } from '~/lib/utils'
 import type { RouterOutputs } from '~/trpc/react'
@@ -70,6 +76,22 @@ export const columns: ColumnDef<Product>[] = [
         >
           <DollarSign className="h-4 w-4" />
           Valor
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
+    accessorKey: 'stock.quantity',
+    accessorFn: (product) => product.stock.quantity,
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          <Warehouse className="h-4 w-4" />
+          Estoque
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
