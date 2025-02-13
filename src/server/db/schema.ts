@@ -36,6 +36,7 @@ export const users = createTable(
     name: text('name'),
     email: text('email').unique(),
     image: text('image'),
+    cpf: text('cpf').unique(),
     role: userRoles('role').notNull().default(UserRoles.USER),
     birthDate: text('birth_date'),
     createdAt: timestamp('created_at', { precision: 3 }).notNull().defaultNow(),

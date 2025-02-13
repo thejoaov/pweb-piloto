@@ -1,11 +1,14 @@
 'use server'
 
 import { AuthApiError, AuthError, type User } from '@supabase/supabase-js'
+import { and, eq } from 'drizzle-orm'
 import { returnValidationErrors } from 'next-safe-action'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { DEFAULT_LOGIN_REDIRECT } from '~/config/routes'
 import { actionClient, authActionClient } from '~/lib/safe-action'
+import { db } from '~/server/db'
+import { users } from '~/server/db/schema'
 import { createClient } from '~/utils/supabase/server'
 
 // This schema is used to validate input from client.
@@ -56,12 +59,22 @@ export const loginUser = actionClient
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
+  cpf: z
+    .string()
+    .min(11)
+    .transform((value) => {
+      return value
+        .replace(/\D/g, '')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    }),
   name: z.string().min(2),
 })
 
 export const signUp = actionClient
   .schema(signUpSchema)
-  .action(async ({ parsedInput: { email, password, name } }) => {
+  .action(async ({ parsedInput: { email, password, name, cpf } }) => {
     try {
       const supabase = await createClient()
 
@@ -81,6 +94,15 @@ export const signUp = actionClient
       ) {
         throw error
       }
+
+      await db
+        .update(users)
+        .set({
+          cpf,
+        })
+        .where(
+          and(eq(users.email, email), eq(users.id, data.user?.id as string)),
+        )
 
       return { data: data.user }
     } catch (error) {

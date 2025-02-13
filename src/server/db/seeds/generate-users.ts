@@ -76,8 +76,7 @@ const createUsers = async () => {
 }
 
 async function main() {
-  await createAdminUser()
-  await createUsers()
+  await Promise.all([createAdminUser(), createUsers()])
 }
 
 main()

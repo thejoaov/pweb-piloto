@@ -16,6 +16,8 @@ export type User = {
   name: string | null
   email: string | null
   image: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export const columns: ColumnDef<User>[] = [
@@ -68,6 +70,21 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
+    accessorKey: 'cpf',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          CPF
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
     accessorKey: 'createdAt',
     header: ({ column }) => {
       return (
@@ -75,10 +92,22 @@ export const columns: ColumnDef<User>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          <Calendar className="mr-2 h-4 w-4" />
+          <CalendarClock className="mr-2 h-4 w-4" />
           Criado em
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const user = row.original
+      return (
+        <div className="flex items-center">
+          <span>
+            {user.createdAt
+              ? new Date(user.createdAt).toLocaleDateString()
+              : ''}
+          </span>
+        </div>
       )
     },
   },
@@ -94,6 +123,18 @@ export const columns: ColumnDef<User>[] = [
           Atualizado em
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const user = row.original
+      return (
+        <div className="flex items-center">
+          <span>
+            {user.updatedAt
+              ? new Date(user.updatedAt).toLocaleDateString()
+              : ''}
+          </span>
+        </div>
       )
     },
   },

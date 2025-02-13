@@ -1,6 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMask } from '@react-input/mask'
 import { Loader } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
@@ -30,6 +31,18 @@ const formSchema = z.object({
   email: z.string().email({
     message: 'Por favor, insira um endereço de email válido.',
   }),
+  cpf: z
+    .string()
+    .min(8, {
+      message: 'CPF deve ter no mínimo 2 caracteres.',
+    })
+    .transform((value) => {
+      return value
+        .replace(/\D/g, '')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    }),
   password: z.string().min(8, {
     message: 'Senha deve ter no mínimo 8 caracteres.',
   }),
@@ -37,6 +50,11 @@ const formSchema = z.object({
 
 export function SignupForm() {
   const router = useRouter()
+
+  const cpfInputRef = useMask({
+    mask: '___.___.___-__',
+    replacement: { _: /\d/ },
+  })
 
   const { form, action, handleSubmitWithAction } = useHookFormAction(
     signUp,
@@ -88,13 +106,36 @@ export function SignupForm() {
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="john@example.com"
                   {...field}
+                  placeholder="john@example.com"
+                  type="email"
                   disabled={action.isExecuting}
                 />
               </FormControl>
               <FormDescription>
                 Nunca compartilharemos seu email com ninguém.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="cpf"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>CPF</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  ref={cpfInputRef}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  disabled={action.isExecuting}
+                />
+              </FormControl>
+              <FormDescription>
+                Nunca compartilharemos seu cpf com ninguém.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -121,7 +162,11 @@ export function SignupForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={action.isExecuting} className="w-full">
+        <Button
+          type="submit"
+          disabled={action.isExecuting || !form.formState.isValid}
+          className="w-full"
+        >
           {action.isExecuting && <Loader className="mr-2 animate-spin" />}
           {action.isExecuting ? 'Cadastrando...' : 'Cadastrar'}
         </Button>
