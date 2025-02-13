@@ -103,7 +103,16 @@ export default function UsersPage() {
     <div className="container mx-auto p-10">
       <h1 className="text-3xl font-bold mb-8 flex-1">Usuários</h1>
 
-      <DataTable columns={expandedColumns} data={users || []} />
+      <DataTable
+        columns={expandedColumns}
+        data={
+          users?.map((u) => ({
+            ...u,
+            createdAt: u.createdAt.toString(),
+            updatedAt: u.updatedAt ? u.updatedAt.toString() : '',
+          })) || []
+        }
+      />
       <AlertDialog
         open={!!userToDelete}
         onOpenChange={() => setUserToDelete(null)}

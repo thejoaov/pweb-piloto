@@ -69,11 +69,16 @@ export const ordersRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       orderCreateSchema.extend({
-        items: z.array(productSelectSchema),
+        items: z.array(
+          z.object({
+            productId: z.string().uuid(),
+            quantity: z.number().min(1),
+          }),
+        ),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const order = await ctx.db
+      const [order] = await ctx.db
         .insert(orders)
         .values({
           ...input,
@@ -85,13 +90,30 @@ export const ordersRouter = createTRPCRouter({
         throw new Error('Order not created')
       }
 
+      if (input.items?.length) {
+        await ctx.db.insert(orderItems).values(
+          input.items.map((item) => ({
+            orderId: order.id,
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        )
+      }
+
       return order
     }),
 
   update: protectedProcedure
     .input(
-      orderCreateSchema.extend({
-        items: z.array(orderItemCreateSchema),
+      orderCreateSchema.partial().extend({
+        items: z
+          .array(
+            z.object({
+              productId: z.string().uuid(),
+              quantity: z.number().min(1),
+            }),
+          )
+          .optional(),
         id: z.string().uuid(),
       }),
     )

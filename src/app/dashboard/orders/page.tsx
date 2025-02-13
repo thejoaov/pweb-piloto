@@ -112,7 +112,10 @@ export default function OrdersPage() {
         total: orderData.total,
         status: orderData.status,
         userId: orderData.userId,
-        items: orderData.items,
+        items: orderData.items.map((i) => ({
+          ...i,
+          orderId: orderData.id as string,
+        })),
       })
     } else {
       await createOrderApi.mutateAsync({
