@@ -1,6 +1,14 @@
 'use client'
 
-import type { ColumnDef } from '@tanstack/react-table'
+import { keepPreviousData } from '@tanstack/react-query'
+import {
+  type ColumnDef,
+  type PaginationState,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import { Copy, Edit, MoreHorizontal, Plus, Trash } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -35,8 +43,16 @@ export default function ProductsPage() {
   const [productToEdit, setProductToEdit] = useState<Product | undefined>(
     undefined,
   )
-  const { data: products, refetch } = api.products.getList.useQuery({
-    perPage: 20,
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageSize: 10,
+    pageIndex: 0,
+  })
+  const {
+    data: products,
+    refetch,
+    isLoading,
+  } = api.products.getTable.useQuery(pagination, {
+    placeholderData: keepPreviousData,
   })
   const createProductApi = api.products.create.useMutation()
   const updateProductApi = api.products.update.useMutation()
@@ -160,6 +176,21 @@ export default function ProductsPage() {
     },
   ]
 
+  const table = useReactTable({
+    data: products?.rows || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    rowCount: products?.rowCount,
+    pageCount: products?.pageCount,
+    onPaginationChange: setPagination,
+    state: {
+      pagination,
+    },
+  })
+
   return (
     <div className="container mx-auto p-10">
       <div className="flex justify-between mb-8">
@@ -169,7 +200,14 @@ export default function ProductsPage() {
           Novo Produto
         </Button>
       </div>
-      <DataTable columns={extendedColumns} data={products || []} />
+      <DataTable
+        data={products?.rows || []}
+        columns={extendedColumns}
+        tableRef={table}
+        showPagination
+        isLoading={isLoading}
+        showLoading
+      />
       <AlertDialog
         open={!!productToDelete}
         onOpenChange={() => setProductToDelete(null)}

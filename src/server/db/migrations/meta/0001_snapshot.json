@@ -51,26 +51,18 @@
         "cadweb_order_item_order_id_cadweb_order_id_fk": {
           "name": "cadweb_order_item_order_id_cadweb_order_id_fk",
           "tableFrom": "cadweb_order_item",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "cadweb_order",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "cadweb_order_item_product_id_cadweb_product_id_fk": {
           "name": "cadweb_order_item_product_id_cadweb_product_id_fk",
           "tableFrom": "cadweb_order_item",
-          "columnsFrom": [
-            "product_id"
-          ],
+          "columnsFrom": ["product_id"],
           "tableTo": "cadweb_product",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -136,26 +128,18 @@
         "cadweb_order_user_id_cadweb_users_id_fk": {
           "name": "cadweb_order_user_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_order",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "cadweb_users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         },
         "cadweb_order_modified_by_id_cadweb_users_id_fk": {
           "name": "cadweb_order_modified_by_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_order",
-          "columnsFrom": [
-            "modified_by_id"
-          ],
+          "columnsFrom": ["modified_by_id"],
           "tableTo": "cadweb_users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -220,13 +204,9 @@
         "cadweb_payment_order_id_cadweb_order_id_fk": {
           "name": "cadweb_payment_order_id_cadweb_order_id_fk",
           "tableFrom": "cadweb_payment",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "cadweb_order",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -302,39 +282,27 @@
         "cadweb_product_created_by_cadweb_users_id_fk": {
           "name": "cadweb_product_created_by_cadweb_users_id_fk",
           "tableFrom": "cadweb_product",
-          "columnsFrom": [
-            "created_by"
-          ],
+          "columnsFrom": ["created_by"],
           "tableTo": "cadweb_users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         },
         "cadweb_product_stock_id_cadweb_stock_id_fk": {
           "name": "cadweb_product_stock_id_cadweb_stock_id_fk",
           "tableFrom": "cadweb_product",
-          "columnsFrom": [
-            "stock_id"
-          ],
+          "columnsFrom": ["stock_id"],
           "tableTo": "cadweb_stock",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "cadweb_product_modified_by_id_cadweb_users_id_fk": {
           "name": "cadweb_product_modified_by_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_product",
-          "columnsFrom": [
-            "modified_by_id"
-          ],
+          "columnsFrom": ["modified_by_id"],
           "tableTo": "cadweb_users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -444,14 +412,10 @@
         "users_id_fk": {
           "name": "users_id_fk",
           "tableFrom": "cadweb_users",
-          "columnsFrom": [
-            "id"
-          ],
+          "columnsFrom": ["id"],
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -460,9 +424,7 @@
       "uniqueConstraints": {
         "cadweb_users_email_unique": {
           "name": "cadweb_users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },
@@ -475,31 +437,17 @@
     "public.order_status": {
       "name": "order_status",
       "schema": "public",
-      "values": [
-        "new",
-        "in_progress",
-        "completed",
-        "cancelled"
-      ]
+      "values": ["new", "in_progress", "completed", "cancelled"]
     },
     "public.payment_methods": {
       "name": "payment_methods",
       "schema": "public",
-      "values": [
-        "cash",
-        "card",
-        "debit",
-        "pix",
-        "ticket"
-      ]
+      "values": ["cash", "card", "debit", "pix", "ticket"]
     },
     "public.user_roles": {
       "name": "user_roles",
       "schema": "public",
-      "values": [
-        "admin",
-        "user"
-      ]
+      "values": ["admin", "user"]
     }
   },
   "schemas": {},

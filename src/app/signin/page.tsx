@@ -11,7 +11,7 @@ import {
 
 export default function SignInPage() {
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-screen">
+    <div className="container mx-auto flex items-center justify-center min-h-screen vt-name-[root]">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { TRPCError } from '@trpc/server'
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, count, desc, eq } from 'drizzle-orm'
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -62,6 +62,7 @@ export const productsRouter = createTRPCRouter({
         },
       })
     }),
+
   getList: protectedProcedure
     .input(
       paginationSchema.extend({
@@ -92,6 +93,51 @@ export const productsRouter = createTRPCRouter({
 
       return response
     }),
+
+  getTable: protectedProcedure
+    .input(
+      z.object({
+        pageIndex: z.number().int().default(0),
+        pageSize: z.number().int().default(10),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const data = await ctx.db.query.products.findMany({
+        offset: input.pageIndex * input.pageSize,
+        limit: input.pageSize,
+        orderBy: asc(products.name),
+        with: {
+          createdBy: true,
+          modifiedBy: true,
+          stock: true,
+        },
+      })
+
+      const [rowCount = { count: 0 }] = await ctx.db
+        .select({ count: count() })
+        .from(products)
+
+      console.log('response', {
+        // rows: data.slice(
+        //   input.pageIndex * input.pageSize,
+        //   (input.pageIndex + 1) * input.pageSize,
+        // ),
+        // rows: data,
+        pageCount: Math.ceil(rowCount.count / input.pageSize),
+        rowCount: rowCount.count,
+      })
+
+      return {
+        // rows: data.slice(
+        //   input.pageIndex * input.pageSize,
+        //   (input.pageIndex + 1) * input.pageSize,
+        // ),
+        rows: data,
+        pageCount: Math.ceil(rowCount.count / input.pageSize),
+        rowCount: rowCount.count,
+      }
+    }),
+
   update: protectedProcedure
     .input(
       productSelectSchema.partial().merge(

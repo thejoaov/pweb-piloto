@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks'
 import { Loader } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import * as z from 'zod'
 import { Button } from '~/components/ui/button'
@@ -17,6 +18,7 @@ import {
 } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { loginUser } from '~/lib/actions'
+import { PasswordInput } from './ui/password-input'
 
 const formSchema = z.object({
   email: z.string().email({
@@ -77,7 +79,7 @@ export function SigninForm() {
             <FormItem>
               <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input
+                <PasswordInput
                   type="password"
                   autoComplete="current-password"
                   disabled={action.isExecuting}

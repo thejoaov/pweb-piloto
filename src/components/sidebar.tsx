@@ -6,6 +6,7 @@ import {
   LogOut,
   Package,
   ShoppingCart,
+  UserIcon,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -30,6 +31,7 @@ import {
   SidebarMenuSubItem,
 } from '~/components/ui/sidebar'
 import { DEFAULT_AUTH_ROUTE } from '~/config/routes'
+import { api } from '~/trpc/react'
 import { createClient } from '~/utils/supabase/client'
 import { ModeToggle } from './theme-toggle'
 import { Button } from './ui/button'
@@ -37,6 +39,7 @@ import { Button } from './ui/button'
 export function DashboardSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const userApi = api.auth.getCurrentUser.useQuery()
 
   const signOut = async () => {
     const supabase = createClient()
@@ -51,10 +54,31 @@ export function DashboardSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
+            <div className="flex items-center p-4">
+              {userApi.data?.image ? (
+                <img
+                  src={userApi.data?.image ?? undefined}
+                  alt="Avatar"
+                  className="w-12 h-12 rounded-full"
+                />
+              ) : (
+                <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                  <UserIcon className="w-12 h-12 rounded-full " />
+                </div>
+              )}
+              <div className="ml-4">
+                <h2 className="text-lg font-semibold">{userApi.data?.name}</h2>
+                <p className="text-sm text-gray-500">{userApi.data?.email}</p>
+              </div>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupContent>
             <SidebarMenu>
               <SidebarHeader>
                 <div className="flex items-center">
-                  <h2 className="text-lg flex-1 font-semibold">Tela inicial</h2>
+                  <h2 className="text-lg flex-1 font-semibold">Menu</h2>
                   <ModeToggle />
                 </div>
               </SidebarHeader>

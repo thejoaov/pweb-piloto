@@ -52,12 +52,8 @@
           "name": "cadweb_order_item_order_id_cadweb_order_id_fk",
           "tableFrom": "cadweb_order_item",
           "tableTo": "cadweb_order",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -65,12 +61,8 @@
           "name": "cadweb_order_item_product_id_cadweb_product_id_fk",
           "tableFrom": "cadweb_order_item",
           "tableTo": "cadweb_product",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -138,12 +130,8 @@
           "name": "cadweb_order_user_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_order",
           "tableTo": "cadweb_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -151,12 +139,8 @@
           "name": "cadweb_order_modified_by_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_order",
           "tableTo": "cadweb_users",
-          "columnsFrom": [
-            "modified_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["modified_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -223,12 +207,8 @@
           "name": "cadweb_payment_order_id_cadweb_order_id_fk",
           "tableFrom": "cadweb_payment",
           "tableTo": "cadweb_order",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["order_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -306,12 +286,8 @@
           "name": "cadweb_product_created_by_cadweb_users_id_fk",
           "tableFrom": "cadweb_product",
           "tableTo": "cadweb_users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -319,12 +295,8 @@
           "name": "cadweb_product_stock_id_cadweb_stock_id_fk",
           "tableFrom": "cadweb_product",
           "tableTo": "cadweb_stock",
-          "columnsFrom": [
-            "stock_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stock_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -332,12 +304,8 @@
           "name": "cadweb_product_modified_by_id_cadweb_users_id_fk",
           "tableFrom": "cadweb_product",
           "tableTo": "cadweb_users",
-          "columnsFrom": [
-            "modified_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["modified_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -450,12 +418,8 @@
           "tableFrom": "cadweb_users",
           "tableTo": "users",
           "schemaTo": "auth",
-          "columnsFrom": [
-            "id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -465,9 +429,7 @@
         "cadweb_users_email_unique": {
           "name": "cadweb_users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -479,31 +441,17 @@
     "public.order_status": {
       "name": "order_status",
       "schema": "public",
-      "values": [
-        "new",
-        "in_progress",
-        "completed",
-        "cancelled"
-      ]
+      "values": ["new", "in_progress", "completed", "cancelled"]
     },
     "public.payment_methods": {
       "name": "payment_methods",
       "schema": "public",
-      "values": [
-        "cash",
-        "card",
-        "debit",
-        "pix",
-        "ticket"
-      ]
+      "values": ["cash", "card", "debit", "pix", "ticket"]
     },
     "public.user_roles": {
       "name": "user_roles",
       "schema": "public",
-      "values": [
-        "admin",
-        "user"
-      ]
+      "values": ["admin", "user"]
     }
   },
   "schemas": {},
