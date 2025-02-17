@@ -9,7 +9,7 @@ import {
   Warehouse,
 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
-import { formatCurrency } from '~/lib/utils'
+import { cn, formatCurrency } from '~/lib/utils'
 import type { RouterOutputs } from '~/trpc/react'
 
 export type Product = Exclude<
@@ -29,10 +29,14 @@ export const columns: ColumnDef<Product>[] = [
             <img
               src={user.imageBase64}
               alt={row.getValue('imageBase64')}
-              className="w-6 h-6 rounded-full"
+              className={cn(
+                'w-10 h-10 rounded-md hover:scale-[5] hover:cursor-zoom-in hover:translate-x-20 transition-all z-10 hover:z-20',
+                row.index <= 1 && 'hover:translate-y-20',
+                row.index > row.getAllCells().length && 'hover:-translate-y-20',
+              )}
             />
           ) : (
-            <Package className="w-6 h-6 rounded-full" />
+            <Package className="w-10 h-10 rounded-full" />
           )}
         </div>
       )

@@ -17,8 +17,7 @@ import {
 import { FormField } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { fileToBase64 } from '~/lib/utils'
-import { productCreateSchema } from '~/server/db/schema'
+import { currencyToFloat, fileToBase64, formatCurrency } from '~/lib/utils'
 import type { Product } from './columns'
 
 interface ProductModalProps {
@@ -43,12 +42,7 @@ const productSchema = z.object({
     .positive('Quantidade deve ser positivo')
     .min(1)
     .max(1000000),
-  price: z.coerce
-    .number()
-    .positive('Valor deve ser positivo')
-    .transform((v) => {
-      return Number.parseFloat(v.toFixed(2))
-    }),
+  price: z.coerce.string().transform(currencyToFloat),
 })
 
 export function ProductModal({
@@ -61,7 +55,7 @@ export function ProductModal({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: product?.name || '',
-      price: product?.price || 0,
+      price: product?.price,
       imageBase64: product?.imageBase64 || '',
       quantity: product?.stock.quantity || 0,
     },
@@ -98,6 +92,7 @@ export function ProductModal({
   }
 
   const image = form.watch('imageBase64')
+  const name = form.watch('name')
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -113,8 +108,8 @@ export function ProductModal({
               {image ? (
                 <img
                   src={image}
-                  alt="Product"
-                  className="h-32 w-32 rounded-full object-cover"
+                  alt={name}
+                  className="w-32 h-32 rounded-md hover:scale-[2] transition-all z-10 hover:z-20"
                 />
               ) : null}
             </div>
@@ -130,7 +125,11 @@ export function ProductModal({
                   const file = files[0]
                   if (!file) return
                   const base64 = await fileToBase64(file)
-                  form.setValue('imageBase64', base64)
+                  form.setValue('imageBase64', base64, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                    shouldTouch: true,
+                  })
                 }}
               />
               {form.formState.errors.imageBase64 && (
@@ -164,11 +163,16 @@ export function ProductModal({
               <Label htmlFor="price" className="text-right">
                 Valor
               </Label>
+
               <FormField
                 name="price"
                 control={form.control}
                 render={({ field }) => (
-                  <Input {...field} prefix="R$" className="col-span-3" />
+                  <Input
+                    type="currency"
+                    {...field}
+                    className="col-span-3 text-start"
+                  />
                 )}
               />
               {form.formState.errors.price && (

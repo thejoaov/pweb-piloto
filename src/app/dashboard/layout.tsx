@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarTrigger } from '~/components/ui/sidebar'
 
 export default async function Layout({ children }: React.PropsWithChildren) {
   return (
-    <div className="vt-name-root">
+    <div>
       <SidebarProvider>
         <DashboardSidebar />
 

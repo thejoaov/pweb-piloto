@@ -1,34 +1,33 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { users } from '~/server/db/schema'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { paginationSchema } from '../utils'
 
 export const usersRouter = createTRPCRouter({
-  getList: protectedProcedure
+  getTable: protectedProcedure
     .input(
-      paginationSchema.extend({
-        orderBy: z
-          .enum(['name', 'email', 'image', 'createdAt', 'updatedAt'])
-          .default('name')
-          .optional(),
+      z.object({
+        pageIndex: z.number().int().default(0),
+        pageSize: z.number().int().default(10),
       }),
     )
     .query(async ({ input, ctx }) => {
-      const {
-        order = 'asc',
-        orderBy = 'createdAt',
-        page = 1,
-        perPage = 10,
-      } = input
-      const response = await ctx.db
-        .select()
-        .from(users)
-        .limit(perPage)
-        .offset((page - 1) * perPage)
-        .orderBy(order === 'asc' ? asc(users[orderBy]) : desc(users[orderBy]))
+      const data = await ctx.db.query.users.findMany({
+        offset: input.pageIndex * input.pageSize,
+        limit: input.pageSize,
+        orderBy: asc(users.name),
+      })
 
-      return response
+      const [rowCount = { count: 0 }] = await ctx.db
+        .select({ count: count() })
+        .from(users)
+
+      return {
+        rows: data,
+        pageCount: Math.ceil(rowCount.count / input.pageSize),
+        rowCount: rowCount.count,
+      }
     }),
 
   delete: protectedProcedure

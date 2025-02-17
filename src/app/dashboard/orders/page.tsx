@@ -1,21 +1,30 @@
 'use client'
 
-import type { ColumnDef } from '@tanstack/react-table'
+import { keepPreviousData } from '@tanstack/react-query'
+import {
+  type ColumnDef,
+  type PaginationState,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import {
   ArrowUpDown,
   CheckCircle2,
   CircleX,
+  Clock,
   Copy,
   Edit,
   Eye,
   Loader2,
-  LoaderPinwheel,
   MoreHorizontal,
+  PackageOpen,
   Plus,
   Timer,
   Trash,
-  Watch,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -40,27 +49,44 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import { cn } from '~/lib/utils'
-import { OrderItemStatus } from '~/server/db/schema'
+import { OrderItemStatus, UserRoles } from '~/server/db/schema'
 import { api } from '~/trpc/react'
-import { type GetOrderList, type Order, columns } from './_components/columns'
-import { OrderModal } from './_components/order-modal'
+import { type Order, columns } from './_components/columns'
+
+const PaymentModal = dynamic(() => import('./_components/payment-modal'), {
+  ssr: false,
+})
+
+const OrderModal = dynamic(() => import('./_components/order-modal'), {
+  ssr: false,
+})
 
 export default function OrdersPage() {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [orderToEdit, setOrderToEdit] = useState<Order | undefined>(undefined)
   const [orderToView, setOrderToView] = useState<Order | undefined>(undefined)
-  const { data: orders, refetch } = api.orders.getList.useQuery({
-    perPage: 20,
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageSize: 10,
+    pageIndex: 0,
+  })
+  const {
+    data: orders,
+    refetch,
+    isLoading,
+  } = api.orders.getTable.useQuery(pagination, {
+    placeholderData: keepPreviousData,
   })
   const createOrderApi = api.orders.create.useMutation()
   const updateOrderApi = api.orders.update.useMutation()
-  const advanceStatusApi = api.orders.update.useMutation()
+  const advanceStatusApi = api.orders.advanceStatus.useMutation()
   const deleteOrderApi = api.orders.delete.useMutation({
     onSuccess: () => {
       refetch()
     },
   })
+  const apiUtils = api.useUtils()
 
   const { data: user } = api.auth.getCurrentUser.useQuery()
 
@@ -71,8 +97,10 @@ export default function OrdersPage() {
     switch (status) {
       case OrderItemStatus.NEW:
         return 'Pendente'
+      case OrderItemStatus.WAITING_PAYMENT:
+        return 'Pagamento'
       case OrderItemStatus.IN_PROGRESS:
-        return 'Processando'
+        return 'Separação'
       case OrderItemStatus.COMPLETED:
         return 'Concluída'
       case OrderItemStatus.CANCELLED:
@@ -99,13 +127,9 @@ export default function OrdersPage() {
     }
   }
 
-  const handleOrderSubmit = async (orderData: {
-    id?: string
-    total: number
-    status: OrderItemStatus
-    userId: string
-    items: { productId: string; quantity: number }[]
-  }) => {
+  const handleOrderSubmit = async (
+    orderData: Omit<Order, 'id'> & { id?: string },
+  ) => {
     if (orderData.id) {
       await updateOrderApi.mutateAsync({
         id: orderData.id,
@@ -120,7 +144,6 @@ export default function OrdersPage() {
     } else {
       await createOrderApi.mutateAsync({
         total: orderData.total,
-        status: orderData.status,
         userId: orderData.userId,
         items: orderData.items,
       })
@@ -151,22 +174,31 @@ export default function OrdersPage() {
       return
     }
 
-    const nextStatus =
-      order.status === OrderItemStatus.NEW
-        ? OrderItemStatus.IN_PROGRESS
-        : OrderItemStatus.COMPLETED
-    await advanceStatusApi.mutateAsync({
-      id: order.id,
-      status: nextStatus,
-    })
+    if (order.status === OrderItemStatus.WAITING_PAYMENT) {
+      setOrderToView(order)
+      setIsPaymentModalOpen(true)
+      return
+    }
 
-    toast(`Status do pedido agora é ${getStatusTranslation(nextStatus)}`, {
+    const { status } = await advanceStatusApi.mutateAsync(order.id)
+    await apiUtils.orders.getTable.invalidate()
+    await apiUtils.orders.getTable.refetch(pagination)
+
+    toast(`Status do pedido agora é ${getStatusTranslation(status)}`, {
       className: 'bg-green-500',
     })
     refetch()
   }
 
-  const extendedColumns: ColumnDef<GetOrderList[number]>[] = [
+  const permissionLevelUser = (order: Order) => {
+    if (order.userId === user?.id || user?.role === UserRoles.ADMIN) {
+      return true
+    }
+
+    return false
+  }
+
+  const extendedColumns: ColumnDef<Order>[] = [
     {
       id: 'status',
       header: ({ column }) => {
@@ -197,6 +229,8 @@ export default function OrdersPage() {
               'h-8 w-fit p-0',
               order.status === OrderItemStatus.NEW && 'text-blue-500',
               order.status === OrderItemStatus.IN_PROGRESS && 'text-yellow-600',
+              order.status === OrderItemStatus.WAITING_PAYMENT &&
+                'text-purple-500',
               order.status === OrderItemStatus.COMPLETED && 'text-green-500',
               order.status === OrderItemStatus.CANCELLED && 'text-red-500',
             )}
@@ -206,16 +240,19 @@ export default function OrdersPage() {
             ) : (
               <>
                 {order.status === OrderItemStatus.NEW && (
-                  <Timer className="h-4 w-4 mr-2" />
+                  <Timer className="h-4 w-4" />
                 )}
                 {order.status === OrderItemStatus.IN_PROGRESS && (
-                  <Watch className="h-4 w-4 mr-2" />
+                  <PackageOpen className="h-4 w-4" />
+                )}
+                {order.status === OrderItemStatus.WAITING_PAYMENT && (
+                  <Clock className="h-4 w-4" />
                 )}
                 {order.status === OrderItemStatus.COMPLETED && (
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  <CheckCircle2 className="h-4 w-4" />
                 )}
                 {order.status === OrderItemStatus.CANCELLED && (
-                  <CircleX className="h-4 w-4 mr-2" />
+                  <CircleX className="h-4 w-4" />
                 )}
                 {getStatusTranslation(order.status as string)}
               </>
@@ -257,7 +294,10 @@ export default function OrdersPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={order.status !== OrderItemStatus.NEW}
+                disabled={
+                  order.status !== OrderItemStatus.NEW ||
+                  !permissionLevelUser(order)
+                }
                 onClick={() => handleEditOrder(order)}
               >
                 <Edit className="mr-2 h-4 w-4" />
@@ -265,7 +305,10 @@ export default function OrdersPage() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={order.status !== OrderItemStatus.NEW}
+                disabled={
+                  order.status !== OrderItemStatus.NEW ||
+                  !permissionLevelUser(order)
+                }
                 onClick={() => handleDeleteOrder(order.id)}
                 className="text-red-500"
               >
@@ -279,6 +322,23 @@ export default function OrdersPage() {
     },
   ]
 
+  const table = useReactTable({
+    columns: extendedColumns,
+    data: orders?.rows || [],
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableMultiSort: true,
+    manualPagination: true,
+    rowCount: orders?.rowCount,
+    enableHiding: false,
+    pageCount: orders?.pageCount,
+    onPaginationChange: setPagination,
+    state: {
+      pagination,
+    },
+  })
+
   return (
     <div className="container mx-auto p-10">
       <div className="flex justify-between mb-8">
@@ -288,7 +348,17 @@ export default function OrdersPage() {
           Novo Pedido
         </Button>
       </div>
-      <DataTable columns={extendedColumns as []} data={orders || []} />
+      <DataTable
+        columns={extendedColumns as []}
+        data={orders?.rows || []}
+        tableRef={table}
+        showPagination
+        pagination={pagination}
+        pageCount={orders?.pageCount}
+        showLoading
+        isLoading={isLoading}
+      />
+
       <AlertDialog
         open={!!orderToDelete}
         onOpenChange={() => setOrderToDelete(null)}
@@ -312,14 +382,28 @@ export default function OrdersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <OrderModal
-        userId={user?.id as string}
-        isOpen={isOrderModalOpen}
-        onClose={handleCloseOrderModal}
-        onSubmit={handleOrderSubmit}
-        order={orderToEdit || orderToView}
-        readonly={!!orderToView}
-      />
+
+      {isOrderModalOpen && (
+        <OrderModal
+          userId={user?.id as string}
+          isOpen={isOrderModalOpen}
+          onClose={handleCloseOrderModal}
+          onSubmit={handleOrderSubmit}
+          order={orderToEdit || orderToView}
+          readonly={!!orderToView}
+        />
+      )}
+
+      {isPaymentModalOpen && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => {
+            setIsPaymentModalOpen(false)
+            setOrderToView(undefined)
+          }}
+          order={orderToView as Order}
+        />
+      )}
     </div>
   )
 }

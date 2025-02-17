@@ -1,6 +1,15 @@
 'use client'
 
-import type { ColumnDef } from '@tanstack/react-table'
+import { keepPreviousData } from '@tanstack/react-query'
+import {
+  type ColumnDef,
+  type PaginationState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import { Copy, MoreHorizontal, Plus, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -30,9 +39,19 @@ import { type User, columns } from './_components/columns'
 
 export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
+
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageSize: 10,
+    pageIndex: 0,
+  })
+
   const { data: currentUser } = api.auth.getCurrentUser.useQuery()
-  const { data: users, refetch } = api.users.getList.useQuery({
-    perPage: 20,
+  const {
+    data: users,
+    refetch,
+    isLoading,
+  } = api.users.getTable.useQuery(pagination, {
+    placeholderData: keepPreviousData,
   })
 
   const deleteUser = api.users.delete.useMutation({
@@ -52,7 +71,7 @@ export default function UsersPage() {
     }
   }
 
-  const expandedColumns: ColumnDef<User>[] = [
+  const extendedColumns: ColumnDef<User>[] = [
     ...columns,
     {
       id: 'actions',
@@ -99,19 +118,38 @@ export default function UsersPage() {
     },
   ]
 
+  const table = useReactTable({
+    columns: extendedColumns,
+    data: users?.rows || [],
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    enableFilters: true,
+    enableColumnFilters: true,
+    manualPagination: true,
+    rowCount: users?.rowCount,
+    enableHiding: false,
+    pageCount: users?.pageCount,
+    onPaginationChange: setPagination,
+    state: {
+      pagination,
+    },
+  })
+
   return (
     <div className="container mx-auto p-10">
       <h1 className="text-3xl font-bold mb-8 flex-1">Usuários</h1>
 
       <DataTable
-        columns={expandedColumns}
-        data={
-          users?.map((u) => ({
-            ...u,
-            createdAt: u.createdAt.toString(),
-            updatedAt: u.updatedAt ? u.updatedAt.toString() : '',
-          })) || []
-        }
+        columns={extendedColumns}
+        tableRef={table}
+        data={users?.rows || []}
+        showPagination
+        pagination={pagination}
+        showLoading
+        isLoading={isLoading}
+        pageCount={users?.pageCount}
       />
       <AlertDialog
         open={!!userToDelete}

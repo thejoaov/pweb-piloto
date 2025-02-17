@@ -29,6 +29,20 @@
       "when": 1739488206470,
       "tag": "0003_bent_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1739651956751,
+      "tag": "0004_dapper_shriek",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1739763577009,
+      "tag": "0005_busy_war_machine",
+      "breakpoints": true
     }
   ]
 }

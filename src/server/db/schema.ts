@@ -117,6 +117,7 @@ export const stockSelectSchema = createSelectSchema(stock)
 export const enum OrderItemStatus {
   NEW = 'new',
   IN_PROGRESS = 'in_progress',
+  WAITING_PAYMENT = 'waiting_payment',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
@@ -124,6 +125,7 @@ export const enum OrderItemStatus {
 export const orderStatus = pgEnum('order_status', [
   OrderItemStatus.NEW,
   OrderItemStatus.IN_PROGRESS,
+  OrderItemStatus.WAITING_PAYMENT,
   OrderItemStatus.COMPLETED,
   OrderItemStatus.CANCELLED,
 ])
@@ -220,3 +222,17 @@ export const paymentSelectSchema = createSelectSchema(payments)
 export const paymentsRelations = relations(payments, ({ one }) => ({
   order: one(orders, { fields: [payments.orderId], references: [orders.id] }),
 }))
+
+export const pixTransactions = createTable('pix_transaction', {
+  id: uuid('id').notNull().primaryKey().defaultRandom(),
+  cpf: varchar('cpf', { length: 11 }).notNull(),
+  amount: doublePrecision('amount').notNull(),
+  transactionId: varchar('transaction_id', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { precision: 3 }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { precision: 3 }).$onUpdate(
+    () => new Date(),
+  ),
+})
+
+export const pixTransactionCreateSchema = createInsertSchema(pixTransactions)
+export const pixTransactionSelectSchema = createSelectSchema(pixTransactions)

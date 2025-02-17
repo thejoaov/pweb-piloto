@@ -1,14 +1,11 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { TRPCError } from '@trpc/server'
+import { asc, count, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import {
   OrderItemStatus,
   orderCreateSchema,
-  orderItemCreateSchema,
   orderItems,
-  orderSelectSchema,
   orders,
-  productSelectSchema,
-  products,
   stock,
 } from '~/server/db/schema'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
@@ -46,6 +43,45 @@ export const ordersRouter = createTRPCRouter({
       })
 
       return ordersList
+    }),
+
+  getTable: protectedProcedure
+    .input(
+      z.object({
+        pageIndex: z.number().int().default(0),
+        pageSize: z.number().int().default(10),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const data = await ctx.db.query.orders.findMany({
+        offset: input.pageIndex * input.pageSize,
+        limit: input.pageSize,
+        orderBy: desc(orders.createdAt),
+        with: {
+          user: true,
+          modifiedBy: true,
+          orderItems: true,
+          items: {
+            with: {
+              product: {
+                with: {
+                  stock: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      const [rowCount = { count: 0 }] = await ctx.db
+        .select({ count: count() })
+        .from(orders)
+
+      return {
+        rows: data,
+        pageCount: Math.ceil(rowCount.count / input.pageSize),
+        rowCount: rowCount.count,
+      }
     }),
 
   getById: protectedProcedure
@@ -132,21 +168,19 @@ export const ordersRouter = createTRPCRouter({
       })
 
       if (items?.length) {
-        await ctx.db
-          .insert(orderItems)
-          .values(
-            items.map((item) => ({
-              orderId: id,
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
-          )
-          .onConflictDoUpdate({
-            target: orderItems.orderId,
-            set: {
-              quantity: sql`${orderItems.quantity} + ${items.map((item) => item.quantity)}`,
-            },
-          })
+        await ctx.db.insert(orderItems).values(
+          items.map((item) => ({
+            orderId: id,
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        )
+        // .onConflictDoUpdate({
+        //   target: orderItems.orderId,
+        //   set: {
+        //     quantity: sql`${orderItems.quantity} + ${items.map((item) => item.quantity)}`,
+        //   },
+        // })
       }
 
       if (orderData.status === OrderItemStatus.CANCELLED) {
@@ -184,6 +218,78 @@ export const ordersRouter = createTRPCRouter({
         .returning()
 
       return { success: true }
+    }),
+
+  advanceStatus: protectedProcedure
+    .input(z.string().uuid())
+    .mutation(async ({ input: id, ctx }) => {
+      const order = await ctx.db.query.orders.findFirst({
+        where: eq(orders.id, id),
+        with: {
+          items: {
+            with: {
+              product: {
+                with: {
+                  stock: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        })
+      }
+
+      let nextStatus: OrderItemStatus = OrderItemStatus.NEW
+
+      switch (order.status) {
+        case OrderItemStatus.NEW:
+          nextStatus = OrderItemStatus.WAITING_PAYMENT
+          break
+        case OrderItemStatus.WAITING_PAYMENT:
+          nextStatus = OrderItemStatus.IN_PROGRESS
+          break
+        case OrderItemStatus.IN_PROGRESS:
+          nextStatus = OrderItemStatus.COMPLETED
+          break
+        default:
+          nextStatus = OrderItemStatus.CANCELLED
+      }
+
+      if (nextStatus === OrderItemStatus.COMPLETED) {
+        await ctx.db.transaction(async (trx) => {
+          for (const orderItem of order.items) {
+            await trx
+              .update(stock)
+              .set({
+                quantity: orderItem.product.stock.quantity - orderItem.quantity,
+              })
+              .where(eq(stock.id, orderItem.product.stockId))
+          }
+        })
+      }
+
+      const [updatedOrder] = await ctx.db
+        .update(orders)
+        .set({
+          status: nextStatus,
+        })
+        .where(eq(orders.id, id))
+        .returning()
+
+      if (!updatedOrder) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Order not updated',
+        })
+      }
+
+      return updatedOrder
     }),
 
   delete: protectedProcedure

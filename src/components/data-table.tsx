@@ -3,18 +3,28 @@
 import {
   type ColumnDef,
   type PaginationState,
-  type SortingState,
-  type TableOptions,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
 } from '@tanstack/react-table'
 import type { Table as TableType } from '@tanstack/react-table'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
-import { Button } from '~/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '~/components/ui/pagination'
+
 import {
   Table,
   TableBody,
@@ -27,42 +37,30 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  tableRef?: TableType<TData>
+  tableRef: TableType<TData>
   showPagination?: boolean
+  pagination?: PaginationState
   showLoading?: boolean
   isLoading?: boolean
+  pageCount?: number
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   tableRef,
+  pagination,
+  pageCount,
   showPagination = false,
   showLoading = false,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
-
-  const table =
-    tableRef ??
-    useReactTable({
-      data,
-      columns,
-      onSortingChange: setSorting,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      state: {
-        sorting,
-      },
-    })
-
   return (
     <div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {tableRef.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
@@ -80,8 +78,19 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+            {showLoading && isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="animate-spin h-10 w-10" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : tableRef.getRowModel().rows?.length ? (
+              tableRef.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
@@ -110,34 +119,79 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <span>
-          {showLoading && isLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : null}
-        </span>
-        {showPagination && (
-          <span>
-            Página <strong>{table.getState().pagination.pageIndex + 1}</strong>{' '}
-            de {table.getPageCount().toLocaleString()}
-          </span>
-        )}
+        <div className="flex items-center space-x-2">
+          {showPagination && pagination && (
+            <Pagination>
+              <PaginationContent>
+                {tableRef?.getCanPreviousPage() && (
+                  <>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => tableRef.previousPage()}
+                      />
+                    </PaginationItem>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Próxima
-        </Button>
+                    <PaginationItem>
+                      <PaginationLink
+                        onClick={() =>
+                          tableRef.setPageIndex(pagination.pageIndex - 1)
+                        }
+                      >
+                        {pagination.pageIndex}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
+                <PaginationItem>
+                  <PaginationLink href="#" isActive>
+                    {pagination.pageIndex + 1}
+                  </PaginationLink>
+                </PaginationItem>
+
+                {tableRef?.getCanNextPage() && (
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() =>
+                        tableRef.setPageIndex(pagination.pageIndex + 1)
+                      }
+                    >
+                      {pagination.pageIndex + 2}
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
+                {pageCount && (
+                  <PaginationItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <PaginationEllipsis />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Páginas</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {Array.from({ length: pageCount }, (_, i) => i).map(
+                          (page) => (
+                            <DropdownMenuItem
+                              key={page}
+                              onClick={() => tableRef.setPageIndex(page)}
+                            >
+                              {page + 1}
+                            </DropdownMenuItem>
+                          ),
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </PaginationItem>
+                )}
+
+                {tableRef?.getCanNextPage() && (
+                  <PaginationItem>
+                    <PaginationNext onClick={() => tableRef.nextPage()} />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </div>
     </div>
   )

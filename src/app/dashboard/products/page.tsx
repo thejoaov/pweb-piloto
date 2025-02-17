@@ -88,7 +88,6 @@ export default function ProductsPage() {
     imageBase64: string
     quantity: number
   }) => {
-    console.log(productData)
     if (productData.id) {
       await updateProductApi.mutateAsync({
         id: productData.id,
@@ -177,13 +176,14 @@ export default function ProductsPage() {
   ]
 
   const table = useReactTable({
+    columns: extendedColumns,
     data: products?.rows || [],
-    columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
     rowCount: products?.rowCount,
+    enableHiding: false,
     pageCount: products?.pageCount,
     onPaginationChange: setPagination,
     state: {
@@ -207,6 +207,8 @@ export default function ProductsPage() {
         showPagination
         isLoading={isLoading}
         showLoading
+        pagination={pagination}
+        pageCount={products?.pageCount}
       />
       <AlertDialog
         open={!!productToDelete}

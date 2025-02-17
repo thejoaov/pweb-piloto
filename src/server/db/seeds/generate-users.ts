@@ -44,6 +44,12 @@ const createAdminUser = async () => {
       name: 'Admin',
     },
   })
+
+  if (error?.code === 'email_exists') {
+    log('Admin user already exists, skipping')
+    return
+  }
+
   if (!data.user || error) {
     log('Failed to create user', error)
     throw new Error('Failed to create supabase user')
@@ -110,7 +116,7 @@ const createUsers = async () => {
 
   const usersCreatedInDb = await db.query.users.findMany()
 
-  if (usersCreatedInDb.length !== USER_COUNT + 1 /** Admin user */) {
+  if (usersCreatedInDb.length === 1 /** Meaning that we only have admin */) {
     log('Failed to create users', { usersCreatedInDb })
     throw new Error('Failed to create users')
   }

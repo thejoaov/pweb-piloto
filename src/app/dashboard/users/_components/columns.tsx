@@ -10,15 +10,9 @@ import {
   User as UserIcon,
 } from 'lucide-react'
 import { Button } from '~/components/ui/button'
+import type { users } from '~/server/db/schema'
 
-export type User = {
-  id: string
-  name: string | null
-  email: string | null
-  image: string | null
-  createdAt: string
-  updatedAt: string
-}
+export type User = typeof users.$inferSelect
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -79,6 +73,21 @@ export const columns: ColumnDef<User>[] = [
         >
           <Mail className="mr-2 h-4 w-4" />
           CPF
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+  },
+  {
+    accessorKey: 'role',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Permissão
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )

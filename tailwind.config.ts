@@ -71,5 +71,9 @@ export default {
   plugins: [
     require("tailwindcss-view-transitions"),
     require("tailwindcss-animate"),
+    require("tailwind-scrollbar")({
+      preferredStrategy: "pseudoelements",
+      nocompatible: true,
+    }),
   ],
 } satisfies Config;

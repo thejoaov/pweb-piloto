@@ -21,6 +21,7 @@ export const env = createEnv({
     SUPABASE_PROJECT_ID: z.string(),
     SUPABASE_DB_PASSWORD: z.string(),
     SUPABASE_ANON_KEY: z.string(),
+    APP_KEY: z.string(),
   },
 
   /**
@@ -49,6 +50,7 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    APP_KEY: process.env.APP_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

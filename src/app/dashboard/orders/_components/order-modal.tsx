@@ -41,19 +41,13 @@ import type { Order } from './columns'
 interface OrderModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (orderData: {
-    id?: string
-    total: number
-    status: OrderItemStatus
-    userId: string
-    items: { productId: string; quantity: number }[]
-  }) => Promise<void>
+  onSubmit: (orderData: Omit<Order, 'id'> & { id?: string }) => Promise<void>
   order?: Order
   userId: string
   readonly?: boolean
 }
 
-export function OrderModal({
+export default function OrderModal({
   isOpen,
   onClose,
   onSubmit,
@@ -64,9 +58,12 @@ export function OrderModal({
   const [status, setStatus] = useState<`${OrderItemStatus}`>(
     order?.status || OrderItemStatus.IN_PROGRESS,
   )
-  const [items, setItems] = useState<{ productId: string; quantity: number }[]>(
-    [],
-  )
+  const [items, setItems] = useState<
+    {
+      productId: string
+      quantity: number
+    }[]
+  >([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [openProductId, setOpenProductId] = useState<number | null>(null)
 
@@ -104,14 +101,14 @@ export function OrderModal({
         status: status as OrderItemStatus,
         userId,
         items,
-      })
+      } as Order)
       setStatus(OrderItemStatus.IN_PROGRESS)
       setItems([])
       onClose()
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     } catch (error: any) {
       toast('Falha ao criar pedido', {
-        description: error.message as string,
+        description: 'Tente novamente mais tarde',
         className: 'bg-red-500',
       })
       console.error('Falha ao criar pedido', error)
@@ -124,13 +121,17 @@ export function OrderModal({
   }
 
   const addItem = () => {
-    setItems([...items, { productId: '', quantity: 1 }])
+    setItems([...items, { productId: '', quantity: 1 } as Order['items'][0]])
   }
 
   const removeItem = (index: number) => {
     if (!order || order.status === OrderItemStatus.IN_PROGRESS) {
       setItems(items.filter((_, i) => i !== index))
     }
+  }
+
+  const getProductById = (productId: string) => {
+    return products?.find((product) => product.id === productId)
   }
 
   const updateItem = (
@@ -145,7 +146,7 @@ export function OrderModal({
           ...newItems[index],
           productId: value as string,
           quantity: 1,
-        }
+        } as { productId: string; quantity: number }
       } else {
         newItems[index] = {
           ...newItems[index],
@@ -161,10 +162,17 @@ export function OrderModal({
 
   const renderProductSelector = (
     index: number,
-    item: { productId: string; quantity: number },
+    item: {
+      productId: string
+      quantity: number
+    },
   ) => {
     if (isLoadingProducts || !products) {
-      return <div>Carregando produtos...</div>
+      return (
+        <div>
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      )
     }
 
     const availableProducts = products.filter(
@@ -188,8 +196,7 @@ export function OrderModal({
             className="w-full justify-between"
           >
             {item.productId
-              ? products.find((product) => product.id === item.productId)
-                  ?.name || 'Selecione o produto...'
+              ? getProductById(item.productId)?.name || 'Selecione o produto...'
               : 'Selecione o produto...'}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -241,7 +248,7 @@ export function OrderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{getTitle()}</DialogTitle>
         </DialogHeader>
@@ -261,10 +268,19 @@ export function OrderModal({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="in_progress">Pendente</SelectItem>
-                    <SelectItem value="processing">Processando</SelectItem>
-                    <SelectItem value="completed">Concluído</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                    <SelectItem value={OrderItemStatus.NEW}>Novo</SelectItem>
+                    <SelectItem value={OrderItemStatus.IN_PROGRESS}>
+                      Em separação
+                    </SelectItem>
+                    <SelectItem value={OrderItemStatus.WAITING_PAYMENT}>
+                      Aguardando Pagamento
+                    </SelectItem>
+                    <SelectItem value={OrderItemStatus.COMPLETED}>
+                      Concluído
+                    </SelectItem>
+                    <SelectItem value={OrderItemStatus.CANCELLED}>
+                      Cancelado
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -274,18 +290,28 @@ export function OrderModal({
               {items.map((item, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                 <div key={index} className="flex items-center gap-2">
+                  {getProductById(item.productId) && (
+                    <img
+                      src={
+                        getProductById(item.productId)?.imageBase64 || undefined
+                      }
+                      alt={getProductById(item.productId)?.name}
+                      className="w-10 h-10 rounded-md hover:scale-[5] transition-all z-10 hover:z-20"
+                    />
+                  )}
                   {renderProductSelector(index, item)}
                   <Input
                     disabled={readonly}
                     type="number"
                     value={item.quantity}
-                    onChange={(e) =>
+                    max={getProductById(item.productId)?.stock.quantity}
+                    onChange={(e) => {
                       updateItem(
                         index,
                         'quantity',
                         Math.max(1, Number.parseInt(e.target.value)),
                       )
-                    }
+                    }}
                     min={1}
                     className="w-20"
                   />
@@ -322,7 +348,14 @@ export function OrderModal({
           <DialogFooter>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                readonly ||
+                !items.length ||
+                // Items are required
+                // They should not have empty ids
+                items.some((item) => !item.productId.length)
+              }
               onClick={readonly ? onClose : undefined}
             >
               {getButtonText()}

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { TRPCError } from '@trpc/server'
-import { asc, count, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, sql } from 'drizzle-orm'
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -117,21 +117,7 @@ export const productsRouter = createTRPCRouter({
         .select({ count: count() })
         .from(products)
 
-      console.log('response', {
-        // rows: data.slice(
-        //   input.pageIndex * input.pageSize,
-        //   (input.pageIndex + 1) * input.pageSize,
-        // ),
-        // rows: data,
-        pageCount: Math.ceil(rowCount.count / input.pageSize),
-        rowCount: rowCount.count,
-      })
-
       return {
-        // rows: data.slice(
-        //   input.pageIndex * input.pageSize,
-        //   (input.pageIndex + 1) * input.pageSize,
-        // ),
         rows: data,
         pageCount: Math.ceil(rowCount.count / input.pageSize),
         rowCount: rowCount.count,
@@ -148,7 +134,7 @@ export const productsRouter = createTRPCRouter({
       ),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...values } = input
+      const { id, quantity, ...values } = input
 
       const [newProduct] = await ctx.db
         .update(products)
@@ -160,9 +146,17 @@ export const productsRouter = createTRPCRouter({
         throw new Error('Failed to update product')
       }
 
-      if (input.quantity) {
+      const prevStock = await ctx.db.query.stock.findFirst({
+        where: eq(stock.id, newProduct.stockId),
+      })
+
+      if (!prevStock) {
+        throw new Error('Failed to find product stock')
+      }
+
+      if (input.quantity !== prevStock.quantity) {
         await ctx.db.update(stock).set({
-          id: newProduct.stockId,
+          id: prevStock.id,
           quantity: input.quantity,
         })
       }
