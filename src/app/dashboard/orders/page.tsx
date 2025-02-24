@@ -189,13 +189,15 @@ export default function OrdersPage() {
 
     const { status } = await advanceStatusApi.mutateAsync(order.id)
     await apiUtils.orders.getTable.invalidate()
-    await apiUtils.orders.getTable.refetch(pagination)
+    await apiUtils.orders.getTable.reset(pagination)
 
     toast(`Status do pedido agora é ${getStatusTranslation(status)}`, {
       className: 'bg-green-500',
     })
     refetch()
   }
+
+  const isAdmin = user?.role === UserRoles.ADMIN
 
   const isOwner = (order: Order) => {
     return order.userId === user?.id
@@ -204,7 +206,7 @@ export default function OrdersPage() {
   const hasModifyPermission = (order: Order) => {
     return !(
       (isOwner(order) && order.status === OrderItemStatus.NEW) ||
-      user?.role === UserRoles.ADMIN
+      isAdmin
     )
   }
 
@@ -230,9 +232,10 @@ export default function OrdersPage() {
             variant="ghost"
             disabled={
               advanceStatusApi.isPending ||
-              [OrderItemStatus.COMPLETED, OrderItemStatus.CANCELLED].includes(
+              ([OrderItemStatus.COMPLETED, OrderItemStatus.CANCELLED].includes(
                 order.status as OrderItemStatus,
-              )
+              ) &&
+                !isAdmin)
             }
             onClick={() => handleAdvanceOrder(order)}
             className={cn(
