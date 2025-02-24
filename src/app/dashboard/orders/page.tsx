@@ -141,6 +141,7 @@ export default function OrdersPage() {
         total: orderData.total,
         status: orderData.status,
         userId: orderData.userId,
+        // @ts-expect-error
         items: orderData.items.map((i) => ({
           ...i,
           orderId: orderData.id as string,
@@ -150,6 +151,7 @@ export default function OrdersPage() {
       await createOrderApi.mutateAsync({
         total: orderData.total,
         userId: orderData.userId,
+        // @ts-expect-error
         items: orderData.items,
         clientId: orderData.client?.id || orderData.clientId,
         status: OrderItemStatus.NEW,

@@ -199,8 +199,10 @@ export const ordersRouter = createTRPCRouter({
               .update(stock)
               .set({
                 quantity:
+                  // @ts-expect-error
                   orderProduct.product.stock.quantity + orderProduct.quantity,
               })
+              // @ts-expect-error
               .where(eq(stock.id, orderProduct.product.stock.id))
           }
         })
@@ -213,8 +215,10 @@ export const ordersRouter = createTRPCRouter({
               .update(stock)
               .set({
                 quantity:
+                  // @ts-expect-error
                   orderProduct.product.stock.quantity - orderProduct.quantity,
               })
+              // @ts-expect-error
               .where(eq(stock.id, orderProduct.product.stock.id))
           }
         })
@@ -276,8 +280,10 @@ export const ordersRouter = createTRPCRouter({
             await trx
               .update(stock)
               .set({
+                // @ts-expect-error
                 quantity: orderItem.product.stock.quantity - orderItem.quantity,
               })
+              // @ts-expect-error
               .where(eq(stock.id, orderItem.product.stockId))
           }
         })

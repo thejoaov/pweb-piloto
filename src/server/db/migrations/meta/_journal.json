@@ -50,6 +50,13 @@
       "when": 1740356527239,
       "tag": "0006_left_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1740372648975,
+      "tag": "0007_careful_white_tiger",
+      "breakpoints": true
     }
   ]
 }

@@ -253,14 +253,14 @@ export default function PaymentModal({
           </TableHeader>
           <TableBody>
             {order?.items?.map(({ product, quantity }) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
+              <TableRow key={product?.id}>
+                <TableCell className="font-medium">{product?.name}</TableCell>
                 <TableCell className="text-right">{quantity}</TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency(product.price)}
+                  {formatCurrency(product?.price || 0)}
                 </TableCell>
                 <TableCell className="text-right">
-                  {formatCurrency(product.price * quantity)}
+                  {formatCurrency((product?.price || 0) * quantity)}
                 </TableCell>
               </TableRow>
             ))}

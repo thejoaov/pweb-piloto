@@ -48,6 +48,11 @@ interface OrderModalProps {
   readonly?: boolean
 }
 
+interface OrderItem {
+  productId: string | null
+  quantity: number
+}
+
 export type OrderCreate = RouterInputs['orders']['create']
 
 export default function OrderModal({
@@ -61,12 +66,7 @@ export default function OrderModal({
   const [status, setStatus] = useState<`${OrderItemStatus}`>(
     order?.status || OrderItemStatus.IN_PROGRESS,
   )
-  const [items, setItems] = useState<
-    {
-      productId: string
-      quantity: number
-    }[]
-  >([])
+  const [items, setItems] = useState<OrderItem[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [openProductId, setOpenProductId] = useState<number | null>(null)
   const [client, setClient] = useState<Order['client'] | null>(null)
@@ -234,13 +234,7 @@ export default function OrderModal({
     )
   }, [client, clientList, openClientSelector, readonly])
 
-  const renderProductSelector = (
-    index: number,
-    item: {
-      productId: string
-      quantity: number
-    },
-  ) => {
+  const renderProductSelector = (index: number, item: OrderItem) => {
     if (isLoadingProducts || !products) {
       return (
         <div>
@@ -382,13 +376,13 @@ export default function OrderModal({
                 {items.map((item, index) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                   <div key={index} className="flex items-center gap-2">
-                    {getProductById(item.productId) && (
+                    {getProductById(item.productId as string) && (
                       <img
                         src={
-                          getProductById(item.productId)?.imageBase64 ||
-                          undefined
+                          getProductById(item.productId as string)
+                            ?.imageBase64 || undefined
                         }
-                        alt={getProductById(item.productId)?.name}
+                        alt={getProductById(item.productId as string)?.name}
                         className="w-10 h-10 rounded-md hover:scale-[5] transition-all z-10 hover:z-20"
                       />
                     )}
@@ -397,7 +391,9 @@ export default function OrderModal({
                       disabled={readonly}
                       type="number"
                       value={item.quantity}
-                      max={getProductById(item.productId)?.stock.quantity}
+                      max={
+                        getProductById(item.productId as string)?.stock.quantity
+                      }
                       onChange={(e) => {
                         updateItem(
                           index,
@@ -447,7 +443,7 @@ export default function OrderModal({
                     !items.length ||
                     // Items are required
                     // They should not have empty ids
-                    items.some((item) => !item.productId.length) ||
+                    items.some((item) => !item.productId?.length) ||
                     !client
                   }
                 >

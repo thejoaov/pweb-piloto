@@ -10,8 +10,8 @@ const config = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // ignoreBuildErrors: true,
   },
-};
+}
 
 export default config;

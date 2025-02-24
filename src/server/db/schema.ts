@@ -168,10 +168,12 @@ export const orderItems = createTable('order_item', {
     .$defaultFn(() => crypto.randomUUID()),
   orderId: uuid('order_id')
     .notNull()
-    .references(() => orders.id),
-  productId: uuid('product_id')
-    .notNull()
-    .references(() => products.id),
+    .references(() => orders.id, {
+      onDelete: 'cascade',
+    }),
+  productId: uuid('product_id').references(() => products.id, {
+    onDelete: 'set null',
+  }),
   quantity: integer('quantity').notNull(),
   createdAt: timestamp('created_at', { precision: 3 }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { precision: 3 }).$onUpdate(

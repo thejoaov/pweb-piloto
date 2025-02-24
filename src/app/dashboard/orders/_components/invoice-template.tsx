@@ -30,7 +30,8 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
 
   // Calculate totals and taxes
   const subtotal = orderItems.reduce(
-    (acc, orderItem) => acc + orderItem.quantity * orderItem.product.price,
+    (acc, orderItem) =>
+      acc + orderItem.quantity * (orderItem.product?.price || 1),
     0,
   )
 
@@ -119,17 +120,17 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
                       {orderItem.productId}
                     </TableCell>
                     <TableCell className="text-black">
-                      {orderItem.product.name}
+                      {orderItem.product?.name}
                     </TableCell>
                     <TableCell className="text-right text-black">
                       {orderItem.quantity}
                     </TableCell>
                     <TableCell className="text-right text-black">
-                      {formatCurrency(orderItem.product.price)}
+                      {formatCurrency(orderItem.product?.price || 0)}
                     </TableCell>
                     <TableCell className="text-right text-black">
                       {formatCurrency(
-                        orderItem.quantity * orderItem.product.price,
+                        orderItem.quantity * (orderItem.product?.price || 1),
                       )}
                     </TableCell>
                   </TableRow>

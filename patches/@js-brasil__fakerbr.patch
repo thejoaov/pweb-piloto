@@ -1,0 +1,303 @@
+diff --git a/addons/pessoas.ts b/addons/pessoas.ts
+index 1f750ff3bdbe0f3731127418f5a1baaf4c4f1817..a1d907f46a323d716717b384f13c56f8db27ba9d 100644
+--- a/addons/pessoas.ts
++++ b/addons/pessoas.ts
+@@ -52,7 +52,9 @@ export const TIPOS_SANGUINEOS = ['O+', 'A+', 'B+', 'AB+', ' O−', ' A−', ' B
+ export function getAstro(data: string | Date) {
+     let month, day;
+     if (typeof data === 'string') {
++        // @ts-ignore
+         day = parseInt(data.split('/')[0]);
++        // @ts-ignore
+         month = parseInt(data.split('/')[1]);
+     } else {
+         day = data.getDate() + 1;
+diff --git a/src/create.ts b/src/create.ts
+index e91a826c1571921a8f2937f34c3a54991eef7579..8470eefcc83ed9eaf048949df0be55a169fb833b 100644
+--- a/src/create.ts
++++ b/src/create.ts
+@@ -177,6 +177,7 @@ export function create_cns(number: string) {
+   number = getAllDigits(number);
+   let somaInicial = 0;
+   for (let i = 0; i < number.length - 1; i++) {
++    // @ts-ignore
+     somaInicial += parseInt(number[i]) * (15 - i);
+   }
+   let soma = somaInicial;
+@@ -285,6 +286,7 @@ export function create_pispasep(number: string) {
+   let d;
+   let p = 2, c = 9;
+   for (d = 0; c >= 0; c--, (p < 9) ? p++ : p = 2) {
++    // @ts-ignore
+     d += parseInt(nis[c]) * p;
+   }
+ 
+diff --git a/src/faker.ts b/src/faker.ts
+index 41e520e79e810e983288aff379ecdea39f9c9311..14d0f5501a1091d2547e5eaaeaf028d5b77357bf 100644
+--- a/src/faker.ts
++++ b/src/faker.ts
+@@ -35,6 +35,7 @@ function cep(options: any = {}) {
+   }
+ 
+   const range = CEP_ESTADO[options.estado];
++  // @ts-ignore
+   let cepNumber = randomNumber(range[0][0], range[0][1]);
+   let cep: string;
+   if (cepNumber < 10000000) {
+@@ -110,6 +111,7 @@ function cns() {
+     cns = makeGenericFaker(MASKS['cns'])();
+ 
+     cns = getAllDigits(cns);
++    // @ts-ignore
+     const primeiroDigito = parseInt(cns[0]);
+     if (primeiroDigito < 3) {
+       const cnsDigits = cns.split('');
+@@ -121,6 +123,7 @@ function cns() {
+ 
+     let digito = create_cns(cns);
+     cns = cns.substr(0, cns.length - 2) + digito;
++    // @ts-ignore
+   } while (!validate_cns(cns));
+   return cns;
+ 
+@@ -265,6 +268,7 @@ function endereco(options: any = {}) {
+     options.estado = randomEstadoSigla();
+   }
+   const estadoFound = LOCALIZACAO_ESTADOS.find(e => e.uf.toLowerCase() === options.estado) || LOCALIZACAO_ESTADOS[0];
++  // @ts-ignore
+   const cidades = LOCALIZACAO_CIDADES.filter(c => c[1] === estadoFound.nome);
+   const cidade = randArray(cidades);
+   let estado = cidade[1].toLowerCase();
+@@ -288,6 +292,7 @@ const inscricaoestadual = (estadoInput: string) => {
+   const funcIE = getSpecialProperty(MASKSIE, estado);
+   let val = makeGenericFaker(funcIE)();
+   val = val.match(/\d/g).join('');
++  // @ts-ignore
+   const newval = generateInscricaoEstadual[estado](val);
+   return newval;
+ }
+@@ -427,6 +432,7 @@ function telefone(options: any = {}) {
+   let telefone: any = makeGenericFaker(MASKS['telefone'])();
+   if (options.estado) {
+     const telefones = telefone.toString().split('');
++    // @ts-ignore
+     const ddd = TELEFONE_ESTADO[options.estado.toLowerCase()].toString();
+     telefones[1] = ddd[0];
+     telefones[2] = ddd[1];
+@@ -457,6 +463,7 @@ function titulo() {
+     } catch (e) {
+ 
+     }
++    // @ts-ignore
+   } while (!validate_titulo(titulo));
+   return titulo;
+ }
+diff --git a/src/inscricaoestadual.ts b/src/inscricaoestadual.ts
+index 200838e720c1368c0bb16ba058b16b31ef5b420f..e6f640a208676066971e6754b3bc702debf6f31d 100644
+--- a/src/inscricaoestadual.ts
++++ b/src/inscricaoestadual.ts
+@@ -362,7 +362,7 @@ export const generateInscricaoEstadual: BigObject<Function> = {
+       if (i > [2, 1].length - 1) {
+         i = 0;
+       }
+-
++      // @ts-ignore
+       return ([2, 1][i++] * parseInt(atual, 10)).toString() + anterior.toString();
+     }, '').split('').reduce(function (anterior, atual) {
+       return anterior + parseInt(atual, 10);
+@@ -592,103 +592,130 @@ export const generateInscricaoEstadual: BigObject<Function> = {
+ 
+ const funcoes: BigObject<Function> = {
+   ac: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ac(valor);
+   },
+ 
+   am: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.am(valor);
+   },
+ 
+   al: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.al(valor);
+   },
+ 
+   ap: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ap(valor);
+   },
+ 
+   ba: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ba(valor);
+   },
+ 
+   ce: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ce(valor);
+   },
+ 
+   df: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.df(valor);
+   },
+ 
+   es: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.es(valor);
+   },
+   go: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.go(valor);
+   },
+   ma: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ma(valor);
+   },
+ 
+   mg: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.mg(valor);
+   },
+ 
+   ms: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ms(valor);
+   },
+   mt: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.mt(valor);
+   },
+   pa: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.pa(valor);
+   },
+ 
+   pb: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.pb(valor);
+   },
+ 
+   pe: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.pe(valor);
+   },
+ 
+   pi: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.pi(valor);
+   },
+ 
+   pr: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.pr(valor);
+   },
+   rj: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.rj(valor);
+   },
+ 
+   rn: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.rn(valor);
+   },
+   ro: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.ro(valor);
+   },
+   rr: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.rr(valor);
+   },
+ 
+   rs: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.rs(valor);
+   },
+ 
+   sc: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.sc(valor);
+   },
+ 
+   se: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.se(valor);
+   },
+ 
+   sp: function (valor: string | boolean) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.sp(valor);
+   },
+ 
+   to: function (valor: any) {
++    // @ts-ignore
+     return valor === generateInscricaoEstadual.to(valor);
+   },
+ };
+@@ -744,6 +771,7 @@ export function validate_inscricaoestadual(ie: string | Array<string>, estado: a
+   }
+ 
+   if (/^\d+$/.test(ie) || estado === 'sp' || funcoes[estado]) {
++    // @ts-ignore
+     return funcoes[estado](ie);
+   }
+ 
+@@ -803,7 +831,7 @@ function mod(valor: string, multiplicadores = serie(2, 9), divisor = 11) {
+     if (i > multiplicadores.length - 1) {
+       i = 0;
+     }
+-
++    // @ts-ignore
+     return (multiplicadores[i++] * parseInt(atual, 10)) + anterior;
+   }, 0) % divisor;
+ }
+@@ -841,6 +869,7 @@ function lookup(ie: any) {
+   const resultado = [];
+ 
+   for (const estado in funcoes) {
++    // @ts-ignore
+     if (funcoes[estado](ie)) {
+       resultado.push(estado);
+     }
+diff --git a/src/utils.ts b/src/utils.ts
+index 8c954b94f869757db29510cfd270a95705fb95c5..6e19447f29d90260377dd9ddf23f93897f8896ab 100644
+--- a/src/utils.ts
++++ b/src/utils.ts
+@@ -52,6 +52,7 @@ export const modulo11 = (value: string) => {
+ 
+   let sum = 0
+   for (let i = 0; i < value.length; i++) {
++    // @ts-ignore
+     sum += parseInt(value[i]) * mults[i]
+   }
+   const digit = (sum *10) % 11
+@@ -139,21 +140,27 @@ export function currencyToNumber(input: string | number) {
+   input = input.replace(/ /g, '');
+   if (input.indexOf('$') !== -1) {
+     const vals = input.split('$');
++    // @ts-ignore
+     input = vals[1];
+   }
+ 
+   // Keeping just numbers . and ,
++  // @ts-ignore
+   input = input.replace(/[^0-9.,]+/, '');
+ 
+   // eua format
++  // @ts-ignore
+   if (input.indexOf('.') === (input.length - 1) - 2) {
++    // @ts-ignore
+     input = input.replace(/\,/g, '')
+   }
+   // br format
+   else {
++    // @ts-ignore
+     input = input.replace(/\./g, '').replace(',', '.');
+   }
+ 
++  // @ts-ignore
+   return parseFloat(input);
+ }
+ 
