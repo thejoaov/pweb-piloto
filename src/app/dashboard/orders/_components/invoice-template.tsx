@@ -2,6 +2,7 @@
 import { ArrowLeftToLine, Download } from 'lucide-react'
 import * as React from 'react'
 import { usePDF } from 'react-to-pdf'
+import { hash } from '~/utils/hash'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -45,10 +46,12 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
   const total = subtotal + totalTaxes
 
   React.useEffect(() => {
-    const generateAccessKey = () => {
+    const generateAccessKey = async () => {
       const date = new Date()
       const orderId = Math.floor(Math.random() * 1000000)
-      const key = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${orderId}${Math.random().toString(36).substring(2, 15)}`
+      const key = await hash(
+        `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${orderId}${Math.random().toString(36).substring(2, 15)}`,
+      )
       setAccessKey(key)
     }
     generateAccessKey()
