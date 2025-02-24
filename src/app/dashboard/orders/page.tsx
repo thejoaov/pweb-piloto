@@ -15,6 +15,7 @@ import {
   CircleX,
   Clock,
   Copy,
+  Download,
   Edit,
   Eye,
   Loader2,
@@ -124,6 +125,10 @@ export default function OrdersPage() {
     if (orderToDelete) {
       deleteOrderApi.mutate({ id: orderToDelete })
       setOrderToDelete(null)
+      toast('Pedido excluído com sucesso', {
+        icon: <CheckCircle2 className="h-4 w-4" />,
+        className: 'bg-green-500',
+      })
     }
   }
 
@@ -146,6 +151,8 @@ export default function OrdersPage() {
         total: orderData.total,
         userId: orderData.userId,
         items: orderData.items,
+        clientId: orderData.client?.id || orderData.clientId,
+        status: OrderItemStatus.NEW,
       })
     }
     refetch()
@@ -190,12 +197,15 @@ export default function OrdersPage() {
     refetch()
   }
 
-  const permissionLevelUser = (order: Order) => {
-    if (order.userId === user?.id || user?.role === UserRoles.ADMIN) {
-      return true
-    }
+  const isOwner = (order: Order) => {
+    return order.userId === user?.id
+  }
 
-    return false
+  const hasModifyPermission = (order: Order) => {
+    return !(
+      (isOwner(order) && order.status === OrderItemStatus.NEW) ||
+      user?.role === UserRoles.ADMIN
+    )
   }
 
   const extendedColumns: ColumnDef<Order>[] = [
@@ -293,28 +303,43 @@ export default function OrdersPage() {
                 Visualizar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  order.status !== OrderItemStatus.NEW ||
-                  !permissionLevelUser(order)
-                }
-                onClick={() => handleEditOrder(order)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  order.status !== OrderItemStatus.NEW ||
-                  !permissionLevelUser(order)
-                }
-                onClick={() => handleDeleteOrder(order.id)}
-                className="text-red-500"
-              >
-                <Trash className="mr-2 h-4 w-4 text-red" />
-                Excluir
-              </DropdownMenuItem>
+
+              {!hasModifyPermission(order) && (
+                <>
+                  <DropdownMenuItem onClick={() => handleEditOrder(order)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
+              {[
+                OrderItemStatus.COMPLETED,
+                OrderItemStatus.IN_PROGRESS,
+              ].includes(order.status) && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      router.push(`/dashboard/orders/invoices/${order.id}`)
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Gerar Nota Fiscal
+                  </DropdownMenuItem>
+                  {!hasModifyPermission(order) && <DropdownMenuSeparator />}
+                </>
+              )}
+
+              {!hasModifyPermission(order) && (
+                <DropdownMenuItem
+                  onClick={() => handleDeleteOrder(order.id)}
+                  className="text-red-500"
+                >
+                  <Trash className="mr-2 h-4 w-4 text-red" />
+                  Excluir
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )

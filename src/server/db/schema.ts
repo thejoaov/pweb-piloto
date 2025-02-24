@@ -135,6 +135,9 @@ export const orders = createTable('order', {
   total: doublePrecision('total').notNull(),
   status: orderStatus('status').notNull().default(OrderItemStatus.NEW),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  clientId: uuid('client_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   modifiedById: uuid('modified_by_id').references(() => users.id, {
     onDelete: 'set null',
   }),
@@ -151,6 +154,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, { fields: [orders.userId], references: [users.id] }),
   items: many(orderItems),
   orderItems: many(orderItems),
+  client: one(users, { fields: [orders.clientId], references: [users.id] }),
   modifiedBy: one(users, {
     fields: [orders.modifiedById],
     references: [users.id],

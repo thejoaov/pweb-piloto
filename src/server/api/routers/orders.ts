@@ -37,6 +37,7 @@ export const ordersRouter = createTRPCRouter({
         orderBy: order === 'asc' ? asc(orders[orderBy]) : desc(orders[orderBy]),
         with: {
           modifiedBy: true,
+          client: true,
           user: true,
           items: true,
         },
@@ -61,6 +62,7 @@ export const ordersRouter = createTRPCRouter({
           user: true,
           modifiedBy: true,
           orderItems: true,
+          client: true,
           items: {
             with: {
               product: {
@@ -91,7 +93,13 @@ export const ordersRouter = createTRPCRouter({
         where: eq(orders.id, input.id),
         with: {
           modifiedBy: true,
-          items: true,
+          user: true,
+          client: true,
+          items: {
+            with: {
+              product: true,
+            },
+          },
         },
       })
 
@@ -119,6 +127,7 @@ export const ordersRouter = createTRPCRouter({
         .values({
           ...input,
           userId: ctx.user?.id,
+          status: OrderItemStatus.NEW,
         })
         .returning()
 

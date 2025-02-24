@@ -1,0 +1,2 @@
+ALTER TABLE "cadweb_order" ADD COLUMN "client_id" uuid;--> statement-breakpoint
+ALTER TABLE "cadweb_order" ADD CONSTRAINT "cadweb_order_client_id_cadweb_users_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."cadweb_users"("id") ON DELETE set null ON UPDATE no action;

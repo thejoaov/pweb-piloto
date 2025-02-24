@@ -1,7 +1,8 @@
 'use client'
 
-import { Check, ChevronsUpDown, Loader2, Plus, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Check, ChevronsUpDown, Download, Loader2, Plus, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import {
@@ -35,7 +36,7 @@ import {
 } from '~/components/ui/select'
 import { cn, formatCurrency } from '~/lib/utils'
 import { OrderItemStatus } from '~/server/db/schema'
-import { api } from '~/trpc/react'
+import { type RouterInputs, api } from '~/trpc/react'
 import type { Order } from './columns'
 
 interface OrderModalProps {
@@ -46,6 +47,8 @@ interface OrderModalProps {
   userId: string
   readonly?: boolean
 }
+
+export type OrderCreate = RouterInputs['orders']['create']
 
 export default function OrderModal({
   isOpen,
@@ -66,14 +69,21 @@ export default function OrderModal({
   >([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [openProductId, setOpenProductId] = useState<number | null>(null)
+  const [client, setClient] = useState<Order['client'] | null>(null)
+  const [openClientSelector, setOpenClientSelector] = useState(false)
+
+  const clientList = api.users.getList.useQuery()
 
   const { data: products, isLoading: isLoadingProducts } =
     api.products.getList.useQuery({ perPage: 100 })
+
+  const router = useRouter()
 
   useEffect(() => {
     if (order) {
       setStatus(order.status || OrderItemStatus.IN_PROGRESS)
       setItems(order.items)
+      setClient(order.client)
     } else {
       setStatus(OrderItemStatus.IN_PROGRESS)
       setItems([])
@@ -101,6 +111,8 @@ export default function OrderModal({
         status: status as OrderItemStatus,
         userId,
         items,
+        clientId: client?.id,
+        client,
       } as Order)
       setStatus(OrderItemStatus.IN_PROGRESS)
       setItems([])
@@ -159,6 +171,68 @@ export default function OrderModal({
       setOpenProductId(null)
     }
   }
+
+  const renderClientSelector = useMemo(() => {
+    if (clientList.isLoading || !clientList.data) {
+      return (
+        <div>
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      )
+    }
+
+    return (
+      <Popover
+        open={openClientSelector}
+        onOpenChange={(open) => setOpenClientSelector(open)}
+      >
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            // biome-ignore lint/a11y/useSemanticElements: <explanation>
+            role="combobox"
+            disabled={readonly}
+            className="w-full justify-between"
+          >
+            {client
+              ? client.name || 'Selecione o cliente...'
+              : 'Selecione o cliente...'}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput
+              disabled={readonly}
+              placeholder="Pesquise o cliente..."
+            />
+            <CommandList>
+              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+              <CommandGroup>
+                {clientList?.data?.map((c) => (
+                  <CommandItem
+                    key={c.id}
+                    onSelect={() => {
+                      setClient(c)
+                      setOpenClientSelector(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        c.id === client?.id ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    {c?.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    )
+  }, [client, clientList, openClientSelector, readonly])
 
   const renderProductSelector = (
     index: number,
@@ -247,125 +321,158 @@ export default function OrderModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{getTitle()}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {order && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select
-                  disabled={readonly}
-                  value={status}
-                  onValueChange={(value) => setStatus(value as OrderItemStatus)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={OrderItemStatus.NEW}>Novo</SelectItem>
-                    <SelectItem value={OrderItemStatus.IN_PROGRESS}>
-                      Em separação
-                    </SelectItem>
-                    <SelectItem value={OrderItemStatus.WAITING_PAYMENT}>
-                      Aguardando Pagamento
-                    </SelectItem>
-                    <SelectItem value={OrderItemStatus.COMPLETED}>
-                      Concluído
-                    </SelectItem>
-                    <SelectItem value={OrderItemStatus.CANCELLED}>
-                      Cancelado
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="grid gap-4">
-              <Label>Itens no pedido</Label>
-              {items.map((item, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                <div key={index} className="flex items-center gap-2">
-                  {getProductById(item.productId) && (
-                    <img
-                      src={
-                        getProductById(item.productId)?.imageBase64 || undefined
-                      }
-                      alt={getProductById(item.productId)?.name}
-                      className="w-10 h-10 rounded-md hover:scale-[5] transition-all z-10 hover:z-20"
-                    />
-                  )}
-                  {renderProductSelector(index, item)}
-                  <Input
+    <Suspense fallback={<Loader2 className="h-6 w-6 animate-spin" />}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getTitle()}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              {order && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="status" className="text-right">
+                    Status
+                  </Label>
+                  <Select
                     disabled={readonly}
-                    type="number"
-                    value={item.quantity}
-                    max={getProductById(item.productId)?.stock.quantity}
-                    onChange={(e) => {
-                      updateItem(
-                        index,
-                        'quantity',
-                        Math.max(1, Number.parseInt(e.target.value)),
-                      )
-                    }}
-                    min={1}
-                    className="w-20"
-                  />
-                  {!readonly && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => removeItem(index)}
-                      disabled={
-                        order && order.status !== OrderItemStatus.IN_PROGRESS
-                      }
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                    value={status}
+                    onValueChange={(value) =>
+                      setStatus(value as OrderItemStatus)
+                    }
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={OrderItemStatus.NEW}>Novo</SelectItem>
+                      <SelectItem value={OrderItemStatus.IN_PROGRESS}>
+                        Em separação
+                      </SelectItem>
+                      <SelectItem value={OrderItemStatus.WAITING_PAYMENT}>
+                        Aguardando Pagamento
+                      </SelectItem>
+                      <SelectItem value={OrderItemStatus.COMPLETED}>
+                        Concluído
+                      </SelectItem>
+                      <SelectItem value={OrderItemStatus.CANCELLED}>
+                        Cancelado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-              {!readonly && (
+              )}
+
+              <div className="items-center gap-4 flex flex-row mb-8">
+                <Label htmlFor="client" className="text-right">
+                  Cliente
+                </Label>
+                {client && (
+                  <img
+                    src={client.image || undefined}
+                    alt={client.name || 'Client'}
+                    className="w-8 h-8 hover:scale-[5] rounded-full transition-all z-10 hover:z-20"
+                  />
+                )}
+                {renderClientSelector}
+              </div>
+
+              <div className="grid gap-4">
+                <Label>Itens no pedido</Label>
+                {items.map((item, index) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  <div key={index} className="flex items-center gap-2">
+                    {getProductById(item.productId) && (
+                      <img
+                        src={
+                          getProductById(item.productId)?.imageBase64 ||
+                          undefined
+                        }
+                        alt={getProductById(item.productId)?.name}
+                        className="w-10 h-10 rounded-md hover:scale-[5] transition-all z-10 hover:z-20"
+                      />
+                    )}
+                    {renderProductSelector(index, item)}
+                    <Input
+                      disabled={readonly}
+                      type="number"
+                      value={item.quantity}
+                      max={getProductById(item.productId)?.stock.quantity}
+                      onChange={(e) => {
+                        updateItem(
+                          index,
+                          'quantity',
+                          Math.max(1, Number.parseInt(e.target.value)),
+                        )
+                      }}
+                      min={1}
+                      className="w-20"
+                    />
+                    {!readonly && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => removeItem(index)}
+                        disabled={
+                          order && order.status !== OrderItemStatus.IN_PROGRESS
+                        }
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {!readonly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addItem}
+                    disabled={readonly}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Item
+                  </Button>
+                )}
+              </div>
+              <div className="text-right">
+                <strong>Total: {formatCurrency(calculateTotal())}</strong>
+              </div>
+            </div>
+            <DialogFooter>
+              {!readonly ? (
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addItem}
-                  disabled={readonly}
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    !items.length ||
+                    // Items are required
+                    // They should not have empty ids
+                    items.some((item) => !item.productId.length) ||
+                    !client
+                  }
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Adicionar Item
+                  {getButtonText()}
+                  {isSubmitting && (
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  )}
                 </Button>
+              ) : (
+                order?.status === OrderItemStatus.COMPLETED && (
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/dashboard/orders/invoices/${order?.id}`)
+                    }
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Gerar Nota Fiscal
+                  </Button>
+                )
               )}
-            </div>
-            <div className="text-right">
-              <strong>Total: {formatCurrency(calculateTotal())}</strong>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="submit"
-              disabled={
-                isSubmitting ||
-                readonly ||
-                !items.length ||
-                // Items are required
-                // They should not have empty ids
-                items.some((item) => !item.productId.length)
-              }
-              onClick={readonly ? onClose : undefined}
-            >
-              {getButtonText()}
-              {isSubmitting && (
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Suspense>
   )
 }

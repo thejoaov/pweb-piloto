@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowUpDown, UserCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
-import type { RouterOutputs } from '~/trpc/react'
+import type { RouterInputs, RouterOutputs } from '~/trpc/react'
 
 export type GetOrderList = Exclude<RouterOutputs['orders']['getList'], never>
 export type Order = RouterOutputs['orders']['getTable']['rows'][number]
@@ -61,14 +61,36 @@ export const columns: ColumnDef<Order>[] = [
         <div className="flex items-center space-x-2">
           {order.user?.image ? (
             <img
-              src={order.user.image}
-              alt={row.getValue('name')}
+              src={order.user?.image as string}
+              alt={order.user?.name as string}
               className="w-6 h-6 rounded-full"
             />
           ) : (
             <UserCircle className="w-6 h-6 rounded-full" />
           )}
           <div>{order.user?.name}</div>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'client.name',
+    accessorFn: (order) => order.client?.name ?? 'Sem nome',
+    header: 'Cliente',
+    cell: ({ row }) => {
+      const order = row.original
+      return (
+        <div className="flex items-center space-x-2">
+          {order.client?.image ? (
+            <img
+              src={order.client?.image as string}
+              alt={order.client?.name as string}
+              className="w-6 h-6 rounded-full"
+            />
+          ) : (
+            <UserCircle className="w-6 h-6 rounded-full" />
+          )}
+          <div>{order.client?.name}</div>
         </div>
       )
     },

@@ -30,6 +30,15 @@ export const usersRouter = createTRPCRouter({
       }
     }),
 
+  getList: protectedProcedure.query(async ({ ctx }) => {
+    const data = await ctx.db
+      .selectDistinct()
+      .from(users)
+      .orderBy(asc(users.name))
+
+    return data
+  }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {

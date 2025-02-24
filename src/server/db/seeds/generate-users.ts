@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { writeFile } from 'node:fs'
-import { faker } from '@faker-js/faker'
+import { fakerPT_BR as faker } from '@faker-js/faker'
+import { fakerBr } from '@js-brasil/fakerbr'
 import { createClient } from '@supabase/supabase-js'
 import { eq } from 'drizzle-orm'
 import type { z } from 'zod'
@@ -75,6 +76,34 @@ const createAdminUser = async () => {
   return data.user
 }
 
+const createUsersInfo = async (usersList: (typeof users.$inferSelect)[]) => {
+  for (const user of usersList) {
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        ...user,
+        role: user.role || UserRoles.USER,
+        name: user.name || faker.person.fullName(),
+        email: user.email || faker.internet.email(),
+        createdAt: user.createdAt || faker.date.past().toISOString(),
+        image:
+          user.image ||
+          faker.image.dataUri({
+            type: 'svg-base64',
+          }),
+        birthDate: faker.date
+          .past({
+            years: faker.number.int({ min: 18, max: 60 }),
+          })
+          .toISOString(),
+        cpf: fakerBr?.cpf?.(),
+      })
+      .where(eq(users.id, user.id))
+      .returning()
+
+    console.log('Updated user', updatedUser?.name)
+  }
+}
 const createUsers = async () => {
   log('Creating users')
   const usersCreated = []
@@ -120,6 +149,8 @@ const createUsers = async () => {
     log('Failed to create users', { usersCreatedInDb })
     throw new Error('Failed to create users')
   }
+
+  await createUsersInfo(usersCreatedInDb)
 
   log('Users created')
 }
